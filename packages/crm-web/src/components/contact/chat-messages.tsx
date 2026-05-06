@@ -138,12 +138,21 @@ export function ChatMessages({ jid, optimisticMessage }: ChatMessagesProps) {
   useEffect(() => {
     if (!lastEvent || lastEvent.type !== 'message:new') return;
 
-    const incoming = lastEvent.data as Message;
-    if (incoming.contact_jid !== jid) return;
+    const payload = lastEvent.data as { message: Message; contact: unknown };
+    const incoming = payload.message;
+    if (!incoming || incoming.contact_jid !== jid) return;
 
     setMessages((prev) => {
-      // Deduplicate
       if (prev.some((m) => m.id === incoming.id)) return prev;
+      // Replace optimistic message if this is our own message echoed back
+      if (incoming.sender === 'me') {
+        const optimisticIdx = prev.findIndex((m) => m.id.startsWith('optimistic-') && m.sender === 'me');
+        if (optimisticIdx >= 0) {
+          const updated = [...prev];
+          updated[optimisticIdx] = incoming;
+          return updated;
+        }
+      }
       return [...prev, incoming];
     });
 

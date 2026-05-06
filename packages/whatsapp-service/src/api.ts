@@ -86,7 +86,7 @@ export function createRouter(db: Database.Database, wa: WhatsAppManager): Router
   router.post(
     '/disconnect',
     asyncHandler(async (_req, res) => {
-      await wa.disconnect();
+      await wa.logout();
       res.json({ ok: true });
     }),
   );

@@ -104,6 +104,7 @@ export class WhatsAppManager extends EventEmitter<WhatsAppManagerEvents> {
 
   // History sync completion detection
   private historyTimeout: ReturnType<typeof setTimeout> | null = null;
+  private historyDone = false;
   private static readonly HISTORY_DONE_DELAY_MS = 5_000;
 
   constructor(authDir: string) {
@@ -168,6 +169,44 @@ export class WhatsAppManager extends EventEmitter<WhatsAppManagerEvents> {
     }
     this.sock?.end(undefined);
     this.sock = null;
+  }
+
+  /**
+   * Full logout: tell WhatsApp server to deauthenticate, clear auth files,
+   * then reconnect fresh (will generate a new QR code).
+   */
+  async logout(): Promise<void> {
+    if (this.historyTimeout) {
+      clearTimeout(this.historyTimeout);
+      this.historyTimeout = null;
+    }
+
+    if (this.sock) {
+      try {
+        await this.sock.logout();
+      } catch {
+        // If logout RPC fails, just close the socket
+        this.sock.end(undefined);
+      }
+      this.sock = null;
+    }
+
+    this.phone = null;
+    this.historyDone = false;
+    this.setState('disconnected');
+
+    // Clear auth files so next connect generates a fresh QR
+    try {
+      fs.rmSync(this.authDir, { recursive: true, force: true });
+    } catch { /* best-effort */ }
+
+    // Reconnect — will emit a new QR since there are no auth files
+    logger.info('Logged out — reconnecting for fresh QR');
+    setTimeout(() => {
+      this.connectInternal().catch((err) => {
+        logger.error({ err }, 'Post-logout reconnect failed');
+      });
+    }, 1_000);
   }
 
   // -----------------------------------------------------------------------
@@ -294,10 +333,19 @@ export class WhatsAppManager extends EventEmitter<WhatsAppManagerEvents> {
     sock.ev.on('creds.update', saveCreds);
 
     // ----- messages.upsert -----
-    sock.ev.on('messages.upsert', async ({ messages }) => {
+    sock.ev.on('messages.upsert', async ({ messages, type }) => {
+      logger.debug({ count: messages.length, type }, 'messages.upsert fired');
       for (const msg of messages) {
-        const normalized = this.normalizeWAMessage(msg);
-        if (!normalized) continue;
+        logger.debug(
+          { id: msg.key.id, jid: msg.key.remoteJid, fromMe: msg.key.fromMe, hasMessage: !!msg.message },
+          'Processing raw message',
+        );
+        const normalized = await this.normalizeWAMessageAsync(msg);
+        if (!normalized) {
+          logger.debug({ id: msg.key.id, jid: msg.key.remoteJid }, 'Message filtered out by normalizeWAMessage');
+          continue;
+        }
+        logger.info({ id: normalized.id, jid: normalized.jid, type: normalized.type, fromMe: normalized.fromMe }, 'Message normalized and emitting');
         this.emit('message', normalized);
       }
     });
@@ -343,19 +391,22 @@ export class WhatsAppManager extends EventEmitter<WhatsAppManagerEvents> {
         );
       }
 
-      // Reset the "done" timer — history arrives in chunks
-      this.resetHistoryDoneTimer();
+      // Reset the "done" timer — history arrives in chunks.
+      // Skip if we already emitted history:done to avoid re-triggering sync UI.
+      if (!this.historyDone) {
+        this.resetHistoryDoneTimer();
+      }
     });
 
     // ----- messaging-history.status -----
     sock.ev.on('messaging-history.status', (data) => {
-      if (data.status === 'complete') {
+      if (data.status === 'complete' && !this.historyDone) {
         logger.info({ syncType: data.syncType, explicit: data.explicit }, 'History sync complete');
-        // Fire history:done immediately when server signals completion
         if (this.historyTimeout) {
           clearTimeout(this.historyTimeout);
           this.historyTimeout = null;
         }
+        this.historyDone = true;
         this.emit('history:done');
       }
     });
@@ -412,6 +463,49 @@ export class WhatsAppManager extends EventEmitter<WhatsAppManagerEvents> {
     } else if (msg.key.participant) {
       // Group message — sender is the participant
       sender = this.translateJidSync(msg.key.participant);
+    } else {
+      sender = chatJid;
+    }
+
+    return {
+      id: msg.key.id ?? `${timestamp}-${chatJid}`,
+      jid: chatJid,
+      sender,
+      pushName: msg.pushName ?? undefined,
+      content,
+      type,
+      timestamp,
+      fromMe,
+    };
+  }
+
+  /**
+   * Async version of normalizeWAMessage that awaits LID translation.
+   * Used for real-time messages where we need the correct phone JID.
+   */
+  private async normalizeWAMessageAsync(
+    msg: WAMessage,
+  ): Promise<IncomingMessage | null> {
+    if (!msg.message) return null;
+
+    const normalized = normalizeMessageContent(msg.message);
+    if (!normalized) return null;
+
+    const rawJid = msg.key.remoteJid;
+    if (!rawJid || rawJid === 'status@broadcast') return null;
+    if (rawJid.endsWith('@g.us')) return null;
+
+    const chatJid = await this.translateJidAsync(rawJid);
+    const { type, content } = this.extractContent(normalized);
+
+    const fromMe = msg.key.fromMe ?? false;
+    const timestamp = Number(msg.messageTimestamp ?? 0) * 1000;
+
+    let sender: string;
+    if (fromMe) {
+      sender = 'me';
+    } else if (msg.key.participant) {
+      sender = await this.translateJidAsync(msg.key.participant);
     } else {
       sender = chatJid;
     }
@@ -554,6 +648,7 @@ export class WhatsAppManager extends EventEmitter<WhatsAppManagerEvents> {
     this.historyTimeout = setTimeout(() => {
       this.historyTimeout = null;
       logger.info('History sync done (timeout — no more chunks)');
+      this.historyDone = true;
       this.emit('history:done');
     }, WhatsAppManager.HISTORY_DONE_DELAY_MS);
   }

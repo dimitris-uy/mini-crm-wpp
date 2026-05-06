@@ -47,6 +47,7 @@ export function phoneFromJid(jid: string): string {
 export class MessageProcessor extends EventEmitter<ProcessorEvents> {
   private db: Database.Database;
   private wa: WhatsAppManager;
+  private historySyncDone = false;
 
   constructor(db: Database.Database, wa: WhatsAppManager) {
     super();
@@ -168,8 +169,10 @@ export class MessageProcessor extends EventEmitter<ProcessorEvents> {
       updateStmt.run(ts.lastMessage, ts.lastReply, now, jid);
     }
 
-    // 4. Emit progress
-    this.emit('history:sync:progress', { processed: data.messages.length });
+    // 4. Emit progress (skip if sync already marked done to avoid re-triggering UI)
+    if (!this.historySyncDone) {
+      this.emit('history:sync:progress', { processed: data.messages.length });
+    }
   }
 
   // -----------------------------------------------------------------------
@@ -177,6 +180,7 @@ export class MessageProcessor extends EventEmitter<ProcessorEvents> {
   // -----------------------------------------------------------------------
 
   private handleHistoryDone(): void {
+    this.historySyncDone = true;
     this.emit('history:sync:done');
   }
 }
