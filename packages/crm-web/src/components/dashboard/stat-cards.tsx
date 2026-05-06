@@ -10,14 +10,18 @@ interface StatCard {
   icon: React.ReactNode;
   color: string;
   bg: string;
+  borderColor: string;
+  shadowColor: string;
 }
 
 const cards: StatCard[] = [
   {
-    label: 'Total Contacts',
+    label: 'Total Contactos',
     key: 'total',
     color: 'text-zinc-300',
     bg: 'bg-zinc-800/50',
+    borderColor: 'hover:border-zinc-600',
+    shadowColor: '',
     icon: (
       <svg
         width="22"
@@ -37,10 +41,12 @@ const cards: StatCard[] = [
     ),
   },
   {
-    label: 'Prospects',
+    label: 'Prospectos',
     key: 'prospects',
     color: 'text-cyan-400',
     bg: 'bg-cyan-500/10',
+    borderColor: 'hover:border-cyan-800',
+    shadowColor: 'hover:shadow-[0_0_12px_rgba(34,211,238,0.15)]',
     icon: (
       <svg
         width="22"
@@ -59,10 +65,12 @@ const cards: StatCard[] = [
     ),
   },
   {
-    label: 'Clients',
+    label: 'Clientes',
     key: 'clients',
     color: 'text-emerald-400',
     bg: 'bg-emerald-500/10',
+    borderColor: 'hover:border-emerald-800',
+    shadowColor: 'hover:shadow-[0_0_12px_rgba(52,211,153,0.15)]',
     icon: (
       <svg
         width="22"
@@ -80,10 +88,12 @@ const cards: StatCard[] = [
     ),
   },
   {
-    label: 'Pending Follow-ups',
+    label: 'Seguimientos Pendientes',
     key: 'pendingFollowUps',
     color: 'text-amber-400',
     bg: 'bg-amber-500/10',
+    borderColor: 'hover:border-amber-800',
+    shadowColor: 'hover:shadow-[0_0_12px_rgba(251,191,36,0.15)]',
     icon: (
       <svg
         width="22"
@@ -103,10 +113,12 @@ const cards: StatCard[] = [
     ),
   },
   {
-    label: 'Inactive (7+ days)',
+    label: 'Inactivos (7+ dias)',
     key: 'inactive',
     color: 'text-rose-400',
     bg: 'bg-rose-500/10',
+    borderColor: 'hover:border-rose-800',
+    shadowColor: 'hover:shadow-[0_0_12px_rgba(248,113,113,0.15)]',
     icon: (
       <svg
         width="22"
@@ -138,7 +150,7 @@ export function StatCards() {
   if (error) {
     return (
       <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-sm text-rose-400">
-        Failed to load stats: {error}
+        Error al cargar estadisticas: {error}
       </div>
     );
   }
@@ -148,7 +160,7 @@ export function StatCards() {
       {cards.map((card) => (
         <div
           key={card.key}
-          className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 transition-colors hover:border-zinc-700"
+          className={`rounded-xl border border-zinc-800 bg-zinc-900 p-5 transition-all duration-150 ${card.borderColor} ${card.shadowColor}`}
         >
           <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg ${card.bg} ${card.color}`}>
             {card.icon}
@@ -160,7 +172,7 @@ export function StatCards() {
             </div>
           ) : (
             <>
-              <p className={`text-3xl font-bold tracking-tight ${card.color}`}>
+              <p className={`text-3xl font-bold tracking-tight tabular-nums ${card.color}`}>
                 {stats[card.key]}
               </p>
               <p className="mt-1 text-sm text-zinc-500">{card.label}</p>

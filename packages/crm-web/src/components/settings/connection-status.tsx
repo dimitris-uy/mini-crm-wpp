@@ -7,8 +7,8 @@ import { apiFetch } from '@/lib/api';
 type ConnectionState = 'connected' | 'disconnected' | 'connecting';
 
 interface StatusResponse {
-  status: ConnectionState;
-  phone?: string;
+  connected: boolean;
+  phone: string | null;
 }
 
 export function ConnectionStatus() {
@@ -21,7 +21,7 @@ export function ConnectionStatus() {
   useEffect(() => {
     apiFetch<StatusResponse>('/status')
       .then((res) => {
-        setState(res.status);
+        setState(res.connected ? 'connected' : 'disconnected');
         if (res.phone) setPhone(res.phone);
       })
       .catch(() => {
@@ -35,8 +35,8 @@ export function ConnectionStatus() {
 
     switch (lastEvent.type) {
       case 'connection:update': {
-        const data = lastEvent.data as { status: ConnectionState; phone?: string };
-        setState(data.status);
+        const data = lastEvent.data as { connected: boolean; phone?: string };
+        setState(data.connected ? 'connected' : 'disconnected');
         if (data.phone) setPhone(data.phone);
         break;
       }
@@ -85,10 +85,10 @@ export function ConnectionStatus() {
           <span
             className={`relative inline-flex h-3 w-3 rounded-full ${
               state === 'connected'
-                ? 'bg-emerald-400'
+                ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
                 : state === 'connecting'
-                  ? 'bg-cyan-400'
-                  : 'bg-red-400'
+                  ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]'
+                  : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.5)]'
             }`}
           />
         </span>
@@ -96,16 +96,16 @@ export function ConnectionStatus() {
         {/* Status text */}
         <div>
           <p className="text-sm font-medium text-zinc-100">
-            {state === 'connected' && 'Connected'}
-            {state === 'connecting' && 'Connecting...'}
-            {state === 'disconnected' && 'Disconnected'}
+            {state === 'connected' && 'Conectado'}
+            {state === 'connecting' && 'Conectando...'}
+            {state === 'disconnected' && 'Desconectado'}
           </p>
           {state === 'connected' && phone && (
             <p className="text-xs text-zinc-400">{phone}</p>
           )}
           {state === 'disconnected' && (
             <p className="text-xs text-zinc-500">
-              Scan the QR code below to connect
+              Escanea el codigo QR para conectar
             </p>
           )}
         </div>
@@ -117,9 +117,9 @@ export function ConnectionStatus() {
           type="button"
           onClick={handleDisconnect}
           disabled={disconnecting}
-          className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition-all duration-150 active:scale-[0.97] hover:bg-red-500/20 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+          {disconnecting ? 'Desconectando...' : 'Desconectar'}
         </button>
       )}
     </div>

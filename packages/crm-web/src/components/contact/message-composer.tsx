@@ -76,21 +76,21 @@ export function MessageComposer({ jid, onOptimisticSend }: MessageComposerProps)
             adjustHeight();
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
+          placeholder="Escribi un mensaje..."
           rows={1}
-          className="flex-1 resize-none rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none transition-colors focus:border-cyan-500/50"
+          className="flex-1 resize-none rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/40"
         />
 
         <button
           type="button"
           onClick={send}
           disabled={!canSend}
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-150 active:scale-[0.97] ${
             canSend
               ? 'bg-cyan-600 text-white hover:bg-cyan-500 cursor-pointer'
-              : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+              : 'bg-zinc-800 text-zinc-600 cursor-not-allowed opacity-60'
           }`}
-          title="Send message"
+          title="Enviar mensaje"
         >
           <svg
             width="18"

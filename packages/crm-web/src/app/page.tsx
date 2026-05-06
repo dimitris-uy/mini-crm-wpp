@@ -8,10 +8,10 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">
-          Dashboard
+          Panel
         </h1>
         <p className="mt-1 text-sm text-zinc-400">
-          Overview of your WhatsApp CRM activity.
+          Resumen de tu actividad en el CRM.
         </p>
       </div>
 

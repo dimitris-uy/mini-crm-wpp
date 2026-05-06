@@ -13,8 +13,15 @@ interface ChatMessagesProps {
 
 const LIMIT = 50;
 
+const mediaLabels: Record<string, string> = {
+  image: '[Imagen]',
+  audio: '[Audio]',
+  video: '[Video]',
+  document: '[Documento]',
+};
+
 function formatTime(ts: number) {
-  return new Date(ts).toLocaleTimeString('en-US', {
+  return new Date(ts).toLocaleTimeString('es-AR', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
@@ -27,10 +34,10 @@ function dateLabelFor(ts: number): string {
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
 
-  if (d.toDateString() === today.toDateString()) return 'Today';
-  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  if (d.toDateString() === today.toDateString()) return 'Hoy';
+  if (d.toDateString() === yesterday.toDateString()) return 'Ayer';
 
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('es-AR', { month: 'short', day: 'numeric' });
 }
 
 function needsDateSeparator(prev: Message | undefined, curr: Message): boolean {
@@ -185,7 +192,7 @@ export function ChatMessages({ jid, optimisticMessage }: ChatMessagesProps) {
               d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
             />
           </svg>
-          <span className="text-sm">Loading messages...</span>
+          <span className="text-sm">Cargando mensajes...</span>
         </div>
       </div>
     );
@@ -208,7 +215,7 @@ export function ChatMessages({ jid, optimisticMessage }: ChatMessagesProps) {
           >
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
-          <p className="text-sm">No messages yet. Send the first message!</p>
+          <p className="text-sm">No hay mensajes. Envia el primero!</p>
         </div>
       </div>
     );
@@ -221,7 +228,7 @@ export function ChatMessages({ jid, optimisticMessage }: ChatMessagesProps) {
     >
       {loadingMore && (
         <div className="mb-3 flex justify-center">
-          <span className="text-xs text-zinc-500">Loading older messages...</span>
+          <span className="text-xs text-zinc-500">Cargando mensajes anteriores...</span>
         </div>
       )}
 
@@ -255,7 +262,7 @@ export function ChatMessages({ jid, optimisticMessage }: ChatMessagesProps) {
                   </p>
                 ) : (
                   <p className="text-sm italic text-zinc-300">
-                    [{msg.type.charAt(0).toUpperCase() + msg.type.slice(1)}]
+                    {mediaLabels[msg.type] || `[${msg.type.charAt(0).toUpperCase() + msg.type.slice(1)}]`}
                   </p>
                 )}
                 <p

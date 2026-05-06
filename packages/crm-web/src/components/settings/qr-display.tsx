@@ -28,12 +28,21 @@ export function QrDisplay() {
       });
   }, []);
 
-  // Poll for QR on mount
+  // Check initial connection status + poll for QR on mount
   useEffect(() => {
-    fetchQr();
-
-    // Poll every 15 seconds as QR codes expire
-    pollTimerRef.current = setInterval(fetchQr, 15_000);
+    apiFetch<{ connected: boolean }>('/status')
+      .then((res) => {
+        if (res.connected) {
+          setIsConnected(true);
+        } else {
+          fetchQr();
+          pollTimerRef.current = setInterval(fetchQr, 15_000);
+        }
+      })
+      .catch(() => {
+        fetchQr();
+        pollTimerRef.current = setInterval(fetchQr, 15_000);
+      });
 
     return () => {
       if (pollTimerRef.current) clearInterval(pollTimerRef.current);
@@ -46,8 +55,8 @@ export function QrDisplay() {
 
     switch (lastEvent.type) {
       case 'qr': {
-        const data = lastEvent.data as { qr: string };
-        setQrData(data.qr);
+        const data = lastEvent.data as { data: string };
+        setQrData(data.data);
         setIsConnected(false);
         setShowSuccess(false);
         break;
@@ -63,14 +72,22 @@ export function QrDisplay() {
         }
         break;
       case 'connection:update': {
-        const data = lastEvent.data as { status: string };
-        if (data.status === 'connected') {
+        const data = lastEvent.data as { connected: boolean };
+        if (data.connected) {
           setIsConnected(true);
           setShowSuccess(true);
           setQrData(null);
-        } else if (data.status === 'disconnected') {
+          if (pollTimerRef.current) {
+            clearInterval(pollTimerRef.current);
+            pollTimerRef.current = null;
+          }
+        } else {
           setIsConnected(false);
           setShowSuccess(false);
+          if (!pollTimerRef.current) {
+            fetchQr();
+            pollTimerRef.current = setInterval(fetchQr, 15_000);
+          }
         }
         break;
       }
@@ -110,14 +127,14 @@ export function QrDisplay() {
   if (isConnected || showSuccess) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 shadow-[0_0_20px_rgba(52,211,153,0.2)]">
           <CheckIcon />
         </div>
         <p className="mt-4 text-lg font-medium text-emerald-400">
-          WhatsApp Connected
+          WhatsApp Conectado
         </p>
         <p className="mt-1 text-sm text-zinc-500">
-          Your session is active and receiving messages
+          Tu sesion esta activa y recibiendo mensajes
         </p>
       </div>
     );
@@ -131,7 +148,7 @@ export function QrDisplay() {
           <LoadingSpinner />
         </div>
         <p className="mt-4 text-sm text-zinc-400">
-          Waiting for QR code...
+          Esperando codigo QR...
         </p>
       </div>
     );
@@ -148,11 +165,11 @@ export function QrDisplay() {
         />
       </div>
       <p className="mt-5 text-sm font-medium text-zinc-300">
-        Scan with WhatsApp
+        Escanea con WhatsApp
       </p>
       <p className="mt-1 text-xs text-zinc-500">
-        Open WhatsApp on your phone &rarr; Settings &rarr; Linked Devices &rarr;
-        Link a Device
+        Abri WhatsApp &rarr; Ajustes &rarr; Dispositivos vinculados &rarr;
+        Vincular dispositivo
       </p>
     </div>
   );

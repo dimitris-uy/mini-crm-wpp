@@ -35,11 +35,11 @@ export function ContactsFilters({ filters, onChange }: ContactsFiltersProps) {
             status: e.target.value as ContactFilters['status'],
           })
         }
-        className="h-9 rounded-lg border border-zinc-800 bg-zinc-900 px-3 text-sm text-zinc-300 outline-none transition-colors hover:border-zinc-700 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/25"
+        className="h-9 rounded-lg border border-zinc-800 bg-zinc-900 px-3 text-sm text-zinc-300 outline-none transition-colors hover:border-zinc-700 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/40"
       >
-        <option value="all">All statuses</option>
-        <option value="prospect">Prospects</option>
-        <option value="client">Clients</option>
+        <option value="all">Todos</option>
+        <option value="prospect">Prospectos</option>
+        <option value="client">Clientes</option>
       </select>
 
       {/* Search input */}
@@ -47,10 +47,10 @@ export function ContactsFilters({ filters, onChange }: ContactsFiltersProps) {
         <SearchIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
         <input
           type="text"
-          placeholder="Search by name or phone..."
+          placeholder="Buscar por nombre o telefono..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          className="h-9 w-full rounded-lg border border-zinc-800 bg-zinc-900 pl-9 pr-3 text-sm text-zinc-300 placeholder-zinc-600 outline-none transition-colors hover:border-zinc-700 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/25"
+          className="h-9 w-full rounded-lg border border-zinc-800 bg-zinc-900 pl-9 pr-3 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none transition-colors hover:border-zinc-700 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/40"
         />
       </div>
 
@@ -73,7 +73,7 @@ export function ContactsFilters({ filters, onChange }: ContactsFiltersProps) {
             }`}
           />
         </button>
-        Inactive only
+        Solo inactivos
       </label>
     </div>
   );

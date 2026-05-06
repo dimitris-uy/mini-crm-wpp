@@ -34,14 +34,14 @@ export function ContactHeader({ contact, onContactUpdate }: ContactHeaderProps) 
 
   const statusStyles =
     contact.status === 'client'
-      ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25'
-      : 'bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25';
+      ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 shadow-[0_0_8px_rgba(52,211,153,0.3)]'
+      : 'bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 shadow-[0_0_8px_rgba(34,211,238,0.3)]';
 
   return (
     <div className="flex items-center gap-4 border-b border-zinc-800 bg-zinc-900 px-4 py-3 sm:px-6">
       <Link
         href="/contacts"
-        className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-100 transition-colors shrink-0"
+        className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-100 transition-colors duration-150 shrink-0"
       >
         <svg
           width="16"
@@ -55,7 +55,7 @@ export function ContactHeader({ contact, onContactUpdate }: ContactHeaderProps) 
         >
           <path d="m15 18-6-6 6-6" />
         </svg>
-        <span className="hidden sm:inline">Contacts</span>
+        <span className="hidden sm:inline">Contactos</span>
       </Link>
 
       <div className="h-5 w-px bg-zinc-800 shrink-0" />
@@ -73,7 +73,7 @@ export function ContactHeader({ contact, onContactUpdate }: ContactHeaderProps) 
         type="button"
         onClick={toggleStatus}
         disabled={toggling}
-        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${statusStyles} ${
+        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all duration-150 active:scale-[0.97] cursor-pointer ${statusStyles} ${
           toggling ? 'opacity-60' : ''
         }`}
       >
@@ -82,7 +82,7 @@ export function ContactHeader({ contact, onContactUpdate }: ContactHeaderProps) 
             contact.status === 'client' ? 'bg-emerald-400' : 'bg-cyan-400'
           }`}
         />
-        {contact.status === 'client' ? 'Client' : 'Prospect'}
+        {contact.status === 'client' ? 'Cliente' : 'Prospecto'}
       </button>
     </div>
   );

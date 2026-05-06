@@ -7,14 +7,14 @@ import { timeAgo, formatPhone } from '@/lib/utils';
 import type { Contact } from '@/lib/types';
 
 function StatusBadge({ status }: { status: Contact['status'] }) {
-  const styles =
-    status === 'client'
-      ? 'bg-emerald-500/15 text-emerald-400'
-      : 'bg-cyan-500/15 text-cyan-400';
+  const isClient = status === 'client';
+  const styles = isClient
+    ? 'bg-emerald-500/15 text-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)]'
+    : 'bg-cyan-500/15 text-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.3)]';
 
   return (
     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${styles}`}>
-      {status}
+      {isClient ? 'Cliente' : 'Prospecto'}
     </span>
   );
 }
@@ -32,12 +32,12 @@ export function InactiveList() {
   return (
     <section>
       <h2 className="mb-4 text-lg font-semibold tracking-tight text-zinc-100">
-        Needs Attention
+        Requieren Atencion
       </h2>
 
       {error && (
         <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-sm text-rose-400">
-          Failed to load: {error}
+          Error al cargar: {error}
         </div>
       )}
 
@@ -65,7 +65,7 @@ export function InactiveList() {
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
             <polyline points="22 4 12 14.01 9 11.01" />
           </svg>
-          <p className="text-sm">All contacts are active</p>
+          <p className="text-sm">Todos los contactos estan activos</p>
         </div>
       )}
 
@@ -74,19 +74,19 @@ export function InactiveList() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-zinc-800 bg-zinc-900/60">
-                <th className="px-4 py-3 font-medium text-zinc-400">Name</th>
-                <th className="hidden px-4 py-3 font-medium text-zinc-400 sm:table-cell">Phone</th>
-                <th className="px-4 py-3 font-medium text-zinc-400">Last Reply</th>
-                <th className="hidden px-4 py-3 font-medium text-zinc-400 sm:table-cell">Status</th>
+                <th className="px-4 py-3 font-medium text-zinc-400">Nombre</th>
+                <th className="hidden px-4 py-3 font-medium text-zinc-400 sm:table-cell">Telefono</th>
+                <th className="px-4 py-3 font-medium text-zinc-400">Ultima respuesta</th>
+                <th className="hidden px-4 py-3 font-medium text-zinc-400 sm:table-cell">Estado</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/60">
               {contacts.map((c) => (
-                <tr key={c.jid} className="bg-zinc-900 transition-colors hover:bg-zinc-800/60">
+                <tr key={c.jid} className="bg-zinc-900 transition-colors hover:bg-zinc-800/50">
                   <td className="px-4 py-3">
                     <Link
                       href={`/contacts/${encodeURIComponent(c.jid)}`}
-                      className="font-medium text-zinc-100 hover:text-cyan-400 transition-colors"
+                      className="font-medium text-zinc-100 hover:text-cyan-400 transition-colors duration-150"
                     >
                       {c.name || formatPhone(c.phone)}
                     </Link>
@@ -95,7 +95,7 @@ export function InactiveList() {
                     {formatPhone(c.phone)}
                   </td>
                   <td className="px-4 py-3 text-amber-400">
-                    {c.last_reply_at ? timeAgo(c.last_reply_at) : 'Never'}
+                    {c.last_reply_at ? timeAgo(c.last_reply_at) : 'Nunca'}
                   </td>
                   <td className="hidden px-4 py-3 sm:table-cell">
                     <StatusBadge status={c.status} />

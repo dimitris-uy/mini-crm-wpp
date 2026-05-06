@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'MiniCRM',
-  description: 'WhatsApp CRM — contacts, messages, and more',
+  description: 'WhatsApp CRM — contactos, mensajes y mucho mas',
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="es"
       className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
     >
       <body className="min-h-full bg-zinc-950 text-zinc-100">

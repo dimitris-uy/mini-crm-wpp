@@ -7,14 +7,14 @@ import { formatDate, formatPhone } from '@/lib/utils';
 import type { Contact } from '@/lib/types';
 
 function StatusBadge({ status }: { status: Contact['status'] }) {
-  const styles =
-    status === 'client'
-      ? 'bg-emerald-500/15 text-emerald-400'
-      : 'bg-cyan-500/15 text-cyan-400';
+  const isClient = status === 'client';
+  const styles = isClient
+    ? 'bg-emerald-500/15 text-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)]'
+    : 'bg-cyan-500/15 text-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.3)]';
 
   return (
     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${styles}`}>
-      {status}
+      {isClient ? 'Cliente' : 'Prospecto'}
     </span>
   );
 }
@@ -45,12 +45,12 @@ export function FollowUpList() {
   return (
     <section>
       <h2 className="mb-4 text-lg font-semibold tracking-tight text-zinc-100">
-        Due Follow-ups
+        Seguimientos Pendientes
       </h2>
 
       {error && (
         <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-sm text-rose-400">
-          Failed to load: {error}
+          Error al cargar: {error}
         </div>
       )}
 
@@ -81,7 +81,7 @@ export function FollowUpList() {
             <line x1="3" y1="10" x2="21" y2="10" />
             <path d="m9 16 2 2 4-4" />
           </svg>
-          <p className="text-sm">No follow-ups scheduled</p>
+          <p className="text-sm">Sin seguimientos programados</p>
         </div>
       )}
 
@@ -90,34 +90,42 @@ export function FollowUpList() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-zinc-800 bg-zinc-900/60">
-                <th className="px-4 py-3 font-medium text-zinc-400">Name</th>
-                <th className="hidden px-4 py-3 font-medium text-zinc-400 sm:table-cell">Phone</th>
-                <th className="px-4 py-3 font-medium text-zinc-400">Follow-up</th>
-                <th className="hidden px-4 py-3 font-medium text-zinc-400 sm:table-cell">Status</th>
+                <th className="px-4 py-3 font-medium text-zinc-400">Nombre</th>
+                <th className="hidden px-4 py-3 font-medium text-zinc-400 sm:table-cell">Telefono</th>
+                <th className="px-4 py-3 font-medium text-zinc-400">Fecha</th>
+                <th className="hidden px-4 py-3 font-medium text-zinc-400 sm:table-cell">Estado</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/60">
-              {contacts.map((c) => (
-                <tr key={c.jid} className="bg-zinc-900 transition-colors hover:bg-zinc-800/60">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/contacts/${encodeURIComponent(c.jid)}`}
-                      className="font-medium text-zinc-100 hover:text-cyan-400 transition-colors"
-                    >
-                      {c.name || formatPhone(c.phone)}
-                    </Link>
-                  </td>
-                  <td className="hidden px-4 py-3 text-zinc-400 sm:table-cell">
-                    {formatPhone(c.phone)}
-                  </td>
-                  <td className={`px-4 py-3 font-medium ${dateClass(c.follow_up_date!)}`}>
-                    {formatDate(c.follow_up_date!)}
-                  </td>
-                  <td className="hidden px-4 py-3 sm:table-cell">
-                    <StatusBadge status={c.status} />
-                  </td>
-                </tr>
-              ))}
+              {contacts.map((c) => {
+                const overdue = c.follow_up_date! < new Date().toISOString().slice(0, 10);
+                return (
+                  <tr key={c.jid} className="bg-zinc-900 transition-colors hover:bg-zinc-800/50">
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/contacts/${encodeURIComponent(c.jid)}`}
+                        className="font-medium text-zinc-100 hover:text-cyan-400 transition-colors duration-150"
+                      >
+                        {c.name || formatPhone(c.phone)}
+                      </Link>
+                    </td>
+                    <td className="hidden px-4 py-3 text-zinc-400 sm:table-cell">
+                      {formatPhone(c.phone)}
+                    </td>
+                    <td className={`px-4 py-3 font-medium ${dateClass(c.follow_up_date!)}`}>
+                      {formatDate(c.follow_up_date!)}
+                      {overdue && (
+                        <span className="ml-2 inline-flex items-center rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
+                          Vencido
+                        </span>
+                      )}
+                    </td>
+                    <td className="hidden px-4 py-3 sm:table-cell">
+                      <StatusBadge status={c.status} />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

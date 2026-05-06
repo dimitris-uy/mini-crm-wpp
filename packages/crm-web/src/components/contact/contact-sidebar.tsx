@@ -52,7 +52,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
     }
   }
 
-  const createdDate = new Date(contact.created_at).toLocaleDateString('en-US', {
+  const createdDate = new Date(contact.created_at).toLocaleDateString('es-AR', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -63,37 +63,26 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
       {/* Follow-up date */}
       <div>
         <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-zinc-500">
-          Follow-up
+          Seguimiento
         </label>
+        <p className="mb-2 text-xs text-zinc-600">Fecha de seguimiento</p>
         <div className="flex items-center gap-2">
           <input
             type="date"
             value={contact.follow_up_date ?? ''}
             onChange={(e) => saveFollowUpDate(e.target.value || null)}
             disabled={savingDate}
-            className="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition-colors focus:border-cyan-500/50 disabled:opacity-60 [color-scheme:dark]"
+            className="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition-colors focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/40 disabled:opacity-60 [color-scheme:dark]"
           />
           {contact.follow_up_date && (
             <button
               type="button"
               onClick={() => saveFollowUpDate(null)}
               disabled={savingDate}
-              className="rounded-lg border border-zinc-800 px-2.5 py-2 text-xs text-zinc-400 hover:border-zinc-700 hover:text-zinc-100 transition-colors"
-              title="Clear follow-up"
+              className="rounded-lg border border-zinc-800 px-2.5 py-2 text-xs text-zinc-400 hover:border-zinc-700 hover:text-zinc-100 transition-all duration-150 active:scale-[0.97]"
+              title="Limpiar seguimiento"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
-              </svg>
+              Limpiar
             </button>
           )}
         </div>
@@ -102,10 +91,10 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
       {/* Notes */}
       <div>
         <label className="mb-1.5 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
-          Notes
+          Notas
           {savingNotes && (
             <span className="text-[10px] normal-case tracking-normal text-cyan-400">
-              saving...
+              guardando...
             </span>
           )}
         </label>
@@ -113,29 +102,29 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
           ref={notesRef}
           defaultValue={contact.notes}
           onBlur={saveNotes}
-          placeholder="Add notes..."
+          placeholder="Agregar notas sobre este contacto..."
           rows={5}
-          className="w-full resize-y rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none transition-colors focus:border-cyan-500/50"
+          className="w-full resize-y rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/40"
         />
       </div>
 
       {/* Contact info */}
       <div>
         <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
-          Info
+          Informacion
         </h3>
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <dt className="text-zinc-500">Phone</dt>
+            <dt className="text-zinc-500">Telefono</dt>
             <dd className="text-zinc-300">{formatPhone(contact.phone)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-zinc-500">Since</dt>
+            <dt className="text-zinc-500">Desde</dt>
             <dd className="text-zinc-300">{createdDate}</dd>
           </div>
           {contact.last_reply_at && (
             <div className="flex justify-between">
-              <dt className="text-zinc-500">Last reply</dt>
+              <dt className="text-zinc-500">Ultima respuesta</dt>
               <dd className="text-zinc-300">{timeAgo(contact.last_reply_at)}</dd>
             </div>
           )}

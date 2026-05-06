@@ -32,7 +32,7 @@ export function ContactDetailShell({ jid }: ContactDetailShellProps) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 px-6 py-4 text-sm text-rose-400">
-          Failed to load contact: {error}
+          Error al cargar contacto: {error}
         </div>
       </div>
     );
@@ -57,7 +57,7 @@ export function ContactDetailShell({ jid }: ContactDetailShellProps) {
               d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
             />
           </svg>
-          <span className="text-sm">Loading contact...</span>
+          <span className="text-sm">Cargando contacto...</span>
         </div>
       </div>
     );
@@ -89,7 +89,7 @@ export function ContactDetailShell({ jid }: ContactDetailShellProps) {
             <circle cx="12" cy="5" r="1" />
             <circle cx="12" cy="19" r="1" />
           </svg>
-          {sidebarOpen ? 'Hide details' : 'Show details'}
+          {sidebarOpen ? 'Ocultar detalles' : 'Ver detalles'}
         </button>
       </div>
 

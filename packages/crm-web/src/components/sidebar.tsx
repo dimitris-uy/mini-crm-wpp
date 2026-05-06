@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboardIcon },
-  { href: '/contacts', label: 'Contacts', icon: UsersIcon },
-  { href: '/settings', label: 'Settings', icon: SettingsIcon },
+  { href: '/', label: 'Panel', icon: LayoutDashboardIcon },
+  { href: '/contacts', label: 'Contactos', icon: UsersIcon },
+  { href: '/settings', label: 'Ajustes', icon: SettingsIcon },
 ];
 
 export function Sidebar() {
@@ -97,7 +97,7 @@ function ConnectionStatus() {
           connected ? 'bg-emerald-400' : 'bg-red-400'
         }`}
       />
-      {connected ? 'Connected' : 'Disconnected'}
+      {connected ? 'Conectado' : 'Desconectado'}
     </div>
   );
 }

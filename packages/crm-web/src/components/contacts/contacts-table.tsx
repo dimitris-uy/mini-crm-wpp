@@ -63,7 +63,7 @@ export function ContactsTable() {
   if (error) {
     return (
       <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-sm text-rose-400">
-        Failed to load contacts: {error}
+        Error al cargar contactos: {error}
       </div>
     );
   }
@@ -76,19 +76,19 @@ export function ContactsTable() {
         {/* Table header */}
         <div className="hidden border-b border-zinc-800 px-4 py-3 sm:grid sm:grid-cols-[2fr_1fr_1fr_1fr_1fr] sm:gap-4">
           <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-            Name
+            Nombre
           </span>
           <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-            Status
+            Estado
           </span>
           <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-            Last Message
+            Ultimo mensaje
           </span>
           <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-            Last Reply
+            Ultima respuesta
           </span>
           <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-            Follow-up
+            Seguimiento
           </span>
         </div>
 
@@ -125,16 +125,16 @@ export function ContactsTable() {
               <EmptyIcon />
             </div>
             <p className="text-sm font-medium text-zinc-300">
-              No contacts yet
+              No hay contactos
             </p>
             <p className="mt-1 text-sm text-zinc-500">
-              Connect WhatsApp to import your conversations.
+              Conecta WhatsApp para importar tus conversaciones.
             </p>
             <Link
               href="/settings"
-              className="mt-4 rounded-lg bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-400 transition-colors hover:bg-cyan-500/20"
+              className="mt-4 rounded-lg bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-400 transition-all active:scale-[0.97] hover:bg-cyan-500/20"
             >
-              Go to Settings
+              Ir a Ajustes
             </Link>
           </div>
         )}
@@ -149,17 +149,17 @@ export function ContactsTable() {
                 <Link
                   key={contact.jid}
                   href={`/contacts/${encodeURIComponent(contact.jid)}`}
-                  className="group block px-4 py-3.5 transition-colors hover:bg-zinc-800/60 sm:grid sm:grid-cols-[2fr_1fr_1fr_1fr_1fr] sm:items-center sm:gap-4"
+                  className="group block px-4 py-3.5 transition-colors hover:bg-zinc-800/50 sm:grid sm:grid-cols-[2fr_1fr_1fr_1fr_1fr] sm:items-center sm:gap-4"
                 >
                   {/* Name + phone */}
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="truncate text-sm font-medium text-zinc-200 group-hover:text-zinc-50">
-                        {contact.name || 'Unknown'}
+                        {contact.name || 'Desconocido'}
                       </p>
                       {inactive && (
                         <span
-                          title="Inactive — no reply in 7+ days"
+                          title="Inactivo — sin respuesta en 7+ dias"
                           className="flex-shrink-0"
                         >
                           <WarningIcon />
@@ -181,7 +181,7 @@ export function ContactsTable() {
                     <span className="text-sm text-zinc-400">
                       {contact.last_message_at
                         ? timeAgo(contact.last_message_at)
-                        : 'Never'}
+                        : 'Nunca'}
                     </span>
                   </div>
 
@@ -196,7 +196,7 @@ export function ContactsTable() {
                     >
                       {contact.last_reply_at
                         ? timeAgo(contact.last_reply_at)
-                        : 'Never'}
+                        : 'Nunca'}
                     </span>
                   </div>
 
@@ -224,11 +224,11 @@ function StatusBadge({ status }: { status: Contact['status'] }) {
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
         isClient
-          ? 'bg-emerald-500/15 text-emerald-400'
-          : 'bg-cyan-500/15 text-cyan-400'
+          ? 'bg-emerald-500/15 text-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)]'
+          : 'bg-cyan-500/15 text-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.3)]'
       }`}
     >
-      {isClient ? 'Client' : 'Prospect'}
+      {isClient ? 'Cliente' : 'Prospecto'}
     </span>
   );
 }

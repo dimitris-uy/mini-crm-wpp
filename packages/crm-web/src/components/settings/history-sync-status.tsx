@@ -48,10 +48,10 @@ export function HistorySyncStatus() {
           <SyncSpinner />
           <div>
             <p className="text-sm font-medium text-zinc-200">
-              Syncing messages...
+              Sincronizando mensajes...
             </p>
             <p className="text-xs text-zinc-500">
-              {processed.toLocaleString()} processed
+              {processed.toLocaleString()} procesados
             </p>
           </div>
         </div>
@@ -76,7 +76,7 @@ export function HistorySyncStatus() {
             </svg>
           </div>
           <p className="text-sm font-medium text-emerald-400">
-            Sync complete!
+            Sincronizacion completa!
           </p>
         </div>
       )}
