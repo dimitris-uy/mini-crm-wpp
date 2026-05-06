@@ -11,6 +11,15 @@ export interface Contact {
   updated_at: number;
 }
 
+export interface Message {
+  id: string;
+  contact_jid: string;
+  sender: string; // 'me' | jid
+  content: string;
+  type: 'text' | 'image' | 'audio' | 'video' | 'document';
+  timestamp: number;
+}
+
 export interface DashboardStats {
   total: number;
   prospects: number;
