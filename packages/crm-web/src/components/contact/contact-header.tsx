@@ -38,7 +38,7 @@ export function ContactHeader({ contact, onContactUpdate }: ContactHeaderProps) 
       : 'bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 shadow-[0_0_8px_rgba(34,211,238,0.3)]';
 
   return (
-    <div className="flex items-center gap-4 border-b border-zinc-800 bg-zinc-900 px-4 py-3 sm:px-6">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-4 border-b border-zinc-800 bg-zinc-900 px-3 py-2.5 sm:px-6 sm:py-3">
       <Link
         href="/contacts"
         className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-100 transition-colors duration-150 shrink-0"
@@ -73,7 +73,7 @@ export function ContactHeader({ contact, onContactUpdate }: ContactHeaderProps) 
         type="button"
         onClick={toggleStatus}
         disabled={toggling}
-        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all duration-150 active:scale-[0.97] cursor-pointer ${statusStyles} ${
+        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 min-h-[44px] sm:min-h-0 sm:py-1 text-xs font-medium transition-all duration-150 active:scale-[0.97] cursor-pointer ${statusStyles} ${
           toggling ? 'opacity-60' : ''
         }`}
       >

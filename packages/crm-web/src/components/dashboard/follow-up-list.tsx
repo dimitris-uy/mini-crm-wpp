@@ -86,7 +86,7 @@ export function FollowUpList() {
       )}
 
       {!error && contacts !== null && contacts.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-zinc-800">
+        <div className="overflow-x-auto rounded-xl border border-zinc-800">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-zinc-800 bg-zinc-900/60">
@@ -100,7 +100,7 @@ export function FollowUpList() {
               {contacts.map((c) => {
                 const overdue = c.follow_up_date! < new Date().toISOString().slice(0, 10);
                 return (
-                  <tr key={c.jid} className="bg-zinc-900 transition-colors hover:bg-zinc-800/50">
+                  <tr key={c.jid} className="bg-zinc-900 transition-colors hover:bg-zinc-800/50 [&>td]:min-h-[48px]">
                     <td className="px-4 py-3">
                       <Link
                         href={`/contacts/${encodeURIComponent(c.jid)}`}

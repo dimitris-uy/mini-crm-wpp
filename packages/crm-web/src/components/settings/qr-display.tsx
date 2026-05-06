@@ -156,18 +156,18 @@ export function QrDisplay() {
 
   // QR available — render it
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center px-4">
       {/* White background container for QR code contrast */}
-      <div className="rounded-2xl bg-white p-4 shadow-lg shadow-black/20">
+      <div className="rounded-2xl bg-white p-3 sm:p-4 shadow-lg shadow-black/20">
         <div
           dangerouslySetInnerHTML={{ __html: svgHtml }}
-          className="[&>svg]:block [&>svg]:h-[280px] [&>svg]:w-[280px]"
+          className="[&>svg]:block [&>svg]:h-[220px] [&>svg]:w-[220px] sm:[&>svg]:h-[280px] sm:[&>svg]:w-[280px]"
         />
       </div>
-      <p className="mt-5 text-sm font-medium text-zinc-300">
+      <p className="mt-4 sm:mt-5 text-sm font-medium text-zinc-300 text-center">
         Escanea con WhatsApp
       </p>
-      <p className="mt-1 text-xs text-zinc-500">
+      <p className="mt-1 text-xs text-zinc-500 text-center max-w-xs">
         Abri WhatsApp &rarr; Ajustes &rarr; Dispositivos vinculados &rarr;
         Vincular dispositivo
       </p>

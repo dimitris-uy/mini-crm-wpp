@@ -17,7 +17,7 @@ export default function SettingsPage() {
         <h2 className="text-lg font-medium text-zinc-200">
           Conexion WhatsApp
         </h2>
-        <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-6 transition-colors hover:border-zinc-700">
+        <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 sm:p-6 transition-colors hover:border-zinc-700">
           {/* Connection status bar */}
           <ConnectionStatus />
 

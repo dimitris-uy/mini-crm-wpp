@@ -64,7 +64,7 @@ export function ContactDetailShell({ jid }: ContactDetailShellProps) {
   }
 
   return (
-    <div className="-mx-6 -mt-8 flex h-[calc(100vh-0px)] flex-col lg:h-[calc(100vh-0px)]">
+    <div className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8 flex h-[calc(100vh-0px)] flex-col lg:h-[calc(100vh-0px)]">
       {/* Header */}
       <ContactHeader contact={contact} onContactUpdate={handleContactUpdate} />
 
@@ -73,7 +73,7 @@ export function ContactDetailShell({ jid }: ContactDetailShellProps) {
         <button
           type="button"
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-2.5 min-h-[44px] text-xs font-medium text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 active:bg-zinc-800 transition-colors"
         >
           <svg
             width="14"
@@ -94,18 +94,18 @@ export function ContactDetailShell({ jid }: ContactDetailShellProps) {
       </div>
 
       {/* Main body: chat + sidebar */}
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         {/* Chat column */}
         <div className="flex min-w-0 flex-1 flex-col lg:w-[70%]">
           <ChatMessages jid={jid} optimisticMessage={optimisticMessage} />
           <MessageComposer jid={jid} onOptimisticSend={setOptimisticMessage} />
         </div>
 
-        {/* Sidebar — desktop: always visible; mobile: collapsible */}
+        {/* Sidebar — desktop: always visible; mobile: collapsible bottom panel */}
         <aside
           className={`${
             sidebarOpen ? 'block' : 'hidden'
-          } w-full border-t border-zinc-800 bg-zinc-900/50 lg:block lg:w-[30%] lg:border-t-0 lg:border-l overflow-y-auto`}
+          } w-full max-h-[50vh] border-t border-zinc-800 bg-zinc-900/50 lg:block lg:max-h-none lg:w-[30%] lg:border-t-0 lg:border-l overflow-y-auto`}
         >
           <ContactSidebar contact={contact} onContactUpdate={handleContactUpdate} />
         </aside>

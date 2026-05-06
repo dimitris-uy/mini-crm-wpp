@@ -35,7 +35,7 @@ export function ContactsFilters({ filters, onChange }: ContactsFiltersProps) {
             status: e.target.value as ContactFilters['status'],
           })
         }
-        className="h-9 rounded-lg border border-zinc-800 bg-zinc-900 px-3 text-sm text-zinc-300 outline-none transition-colors hover:border-zinc-700 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/40"
+        className="h-11 sm:h-9 w-full sm:w-auto rounded-lg border border-zinc-800 bg-zinc-900 px-3 text-sm text-zinc-300 outline-none transition-colors hover:border-zinc-700 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/40"
       >
         <option value="all">Todos</option>
         <option value="prospect">Prospectos</option>
@@ -43,14 +43,14 @@ export function ContactsFilters({ filters, onChange }: ContactsFiltersProps) {
       </select>
 
       {/* Search input */}
-      <div className="relative flex-1 sm:max-w-xs">
+      <div className="relative w-full sm:flex-1 sm:max-w-xs">
         <SearchIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
         <input
           type="text"
           placeholder="Buscar por nombre o telefono..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          className="h-9 w-full rounded-lg border border-zinc-800 bg-zinc-900 pl-9 pr-3 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none transition-colors hover:border-zinc-700 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/40"
+          className="h-11 sm:h-9 w-full rounded-lg border border-zinc-800 bg-zinc-900 pl-9 pr-3 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none transition-colors hover:border-zinc-700 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/40"
         />
       </div>
 

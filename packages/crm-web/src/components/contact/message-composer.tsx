@@ -66,7 +66,7 @@ export function MessageComposer({ jid, onOptimisticSend }: MessageComposerProps)
   const canSend = text.trim().length > 0 && !sending;
 
   return (
-    <div className="border-t border-zinc-800 bg-zinc-900 px-4 py-3">
+    <div className="border-t border-zinc-800 bg-zinc-900 px-3 py-2.5 sm:px-4 sm:py-3">
       <div className="flex items-end gap-2">
         <textarea
           ref={textareaRef}
@@ -78,14 +78,14 @@ export function MessageComposer({ jid, onOptimisticSend }: MessageComposerProps)
           onKeyDown={handleKeyDown}
           placeholder="Escribi un mensaje..."
           rows={1}
-          className="flex-1 resize-none rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/40"
+          className="flex-1 resize-none rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 sm:py-2.5 text-sm min-h-[44px] text-zinc-100 placeholder:text-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/40"
         />
 
         <button
           type="button"
           onClick={send}
           disabled={!canSend}
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-150 active:scale-[0.97] ${
+          className={`flex h-11 w-11 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-150 active:scale-[0.97] ${
             canSend
               ? 'bg-cyan-600 text-white hover:bg-cyan-500 cursor-pointer'
               : 'bg-zinc-800 text-zinc-600 cursor-not-allowed opacity-60'

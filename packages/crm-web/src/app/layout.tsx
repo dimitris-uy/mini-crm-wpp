@@ -33,7 +33,7 @@ export default function RootLayout({
 
         {/* Main content: offset by sidebar width on desktop */}
         <main className="min-h-screen lg:pl-60">
-          <div className="mx-auto max-w-7xl px-6 py-8 pt-20 lg:pt-8">
+          <div className="mx-auto max-w-7xl px-4 py-4 pt-16 sm:px-6 sm:py-6 lg:px-8 lg:pt-8">
             {children}
           </div>
         </main>

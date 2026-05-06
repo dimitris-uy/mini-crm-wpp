@@ -59,7 +59,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
   });
 
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-5">
+    <div className="flex flex-col gap-4 p-3 sm:gap-5 sm:p-4 lg:p-5">
       {/* Follow-up date */}
       <div>
         <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-zinc-500">

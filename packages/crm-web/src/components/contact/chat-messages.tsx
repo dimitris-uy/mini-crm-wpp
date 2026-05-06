@@ -224,7 +224,7 @@ export function ChatMessages({ jid, optimisticMessage }: ChatMessagesProps) {
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-y-auto px-4 py-4"
+      className="flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4"
     >
       {loadingMore && (
         <div className="mb-3 flex justify-center">
@@ -250,7 +250,7 @@ export function ChatMessages({ jid, optimisticMessage }: ChatMessagesProps) {
               className={`mb-2 flex ${isOutbound ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[70%] rounded-2xl px-3.5 py-2 ${
+                className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-3.5 py-2 ${
                   isOutbound
                     ? 'rounded-br-md bg-cyan-700 text-white'
                     : 'rounded-bl-md bg-zinc-800 text-zinc-100'

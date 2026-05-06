@@ -4,7 +4,7 @@ import { InactiveList } from '@/components/dashboard/inactive-list';
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">

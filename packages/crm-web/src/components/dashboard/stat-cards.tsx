@@ -156,13 +156,13 @@ export function StatCards() {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-5">
       {cards.map((card) => (
         <div
           key={card.key}
-          className={`rounded-xl border border-zinc-800 bg-zinc-900 p-5 transition-all duration-150 ${card.borderColor} ${card.shadowColor}`}
+          className={`rounded-xl border border-zinc-800 bg-zinc-900 p-3 sm:p-5 transition-all duration-150 ${card.borderColor} ${card.shadowColor}`}
         >
-          <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg ${card.bg} ${card.color}`}>
+          <div className={`mb-2 sm:mb-3 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg ${card.bg} ${card.color}`}>
             {card.icon}
           </div>
           {stats === null ? (
@@ -172,10 +172,10 @@ export function StatCards() {
             </div>
           ) : (
             <>
-              <p className={`text-3xl font-bold tracking-tight tabular-nums ${card.color}`}>
+              <p className={`text-2xl sm:text-3xl font-bold tracking-tight tabular-nums ${card.color}`}>
                 {stats[card.key]}
               </p>
-              <p className="mt-1 text-sm text-zinc-500">{card.label}</p>
+              <p className="mt-1 text-xs sm:text-sm text-zinc-500">{card.label}</p>
             </>
           )}
         </div>

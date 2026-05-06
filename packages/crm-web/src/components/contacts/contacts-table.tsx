@@ -149,7 +149,7 @@ export function ContactsTable() {
                 <Link
                   key={contact.jid}
                   href={`/contacts/${encodeURIComponent(contact.jid)}`}
-                  className="group block px-4 py-3.5 transition-colors hover:bg-zinc-800/50 sm:grid sm:grid-cols-[2fr_1fr_1fr_1fr_1fr] sm:items-center sm:gap-4"
+                  className="group block px-4 py-3.5 min-h-[48px] transition-colors hover:bg-zinc-800/50 active:bg-zinc-800/70 sm:grid sm:grid-cols-[2fr_1fr_1fr_1fr_1fr] sm:items-center sm:gap-4"
                 >
                   {/* Name + phone */}
                   <div className="min-w-0">
