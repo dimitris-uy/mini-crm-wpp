@@ -1,3 +1,28 @@
-# Placeholder — production compose
-version: "3.9"
-services: {}
+services:
+  whatsapp-service:
+    build: ./packages/whatsapp-service
+    ports:
+      - "3001:3001"
+      - "3002:3002"
+    volumes:
+      - wa_data:/data
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATA_DIR=/data
+      - LOG_LEVEL=info
+
+  crm-web:
+    build:
+      context: ./packages/crm-web
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:3001
+        - NEXT_PUBLIC_WS_URL=ws://localhost:3002
+    ports:
+      - "3000:3000"
+    depends_on:
+      - whatsapp-service
+    restart: unless-stopped
+
+volumes:
+  wa_data:

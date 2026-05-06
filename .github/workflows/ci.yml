@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  typecheck-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: packages/whatsapp-service/package-lock.json
+      - run: npm ci
+        working-directory: packages/whatsapp-service
+      - run: npx tsc --noEmit
+        working-directory: packages/whatsapp-service
+
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: packages/whatsapp-service/package-lock.json
+      - run: npm ci
+        working-directory: packages/whatsapp-service
+      - run: npx vitest run
+        working-directory: packages/whatsapp-service
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: packages/crm-web/package-lock.json
+      - run: npm ci
+        working-directory: packages/crm-web
+      - run: npm run build
+        working-directory: packages/crm-web
