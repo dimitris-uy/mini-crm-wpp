@@ -1,12 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useWebSocket } from '@/hooks/useWebSocket';
+import { apiFetch } from '@/lib/api';
 
 const navItems = [
   { href: '/', label: 'Panel', icon: LayoutDashboardIcon },
+  { href: '/chats', label: 'Chats', icon: MessageCircleIcon },
   { href: '/contacts', label: 'Contactos', icon: UsersIcon },
+  { href: '/seguimientos', label: 'Seguimientos', icon: CalendarClockIcon },
   { href: '/settings', label: 'Ajustes', icon: SettingsIcon },
 ];
 
@@ -87,17 +91,33 @@ export function Sidebar() {
 }
 
 function ConnectionStatus() {
-  // Placeholder: will be wired to WebSocket later
-  const connected = false;
+  const { lastEvent } = useWebSocket();
+  const [waConnected, setWaConnected] = useState(false);
+
+  useEffect(() => {
+    apiFetch<{ connected: boolean }>('/status')
+      .then((res) => setWaConnected(res.connected))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!lastEvent) return;
+    if (lastEvent.type === 'connected') setWaConnected(true);
+    if (lastEvent.type === 'disconnected') setWaConnected(false);
+    if (lastEvent.type === 'connection:update') {
+      const data = lastEvent.data as { connected: boolean };
+      setWaConnected(data.connected);
+    }
+  }, [lastEvent]);
 
   return (
     <div className="flex items-center gap-2 text-xs text-zinc-500">
       <span
         className={`h-2 w-2 rounded-full ${
-          connected ? 'bg-emerald-400' : 'bg-red-400'
+          waConnected ? 'bg-emerald-400' : 'bg-red-400'
         }`}
       />
-      {connected ? 'Conectado' : 'Desconectado'}
+      {waConnected ? 'Conectado' : 'Desconectado'}
     </div>
   );
 }
@@ -218,6 +238,50 @@ function XIcon() {
     >
       <path d="M18 6 6 18" />
       <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
+function CalendarClockIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5" />
+      <path d="M16 2v4" />
+      <path d="M8 2v4" />
+      <path d="M3 10h5" />
+      <path d="M17.5 17.5 16 16.3V14" />
+      <circle cx="16" cy="16" r="6" />
+    </svg>
+  );
+}
+
+function MessageCircleIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z" />
+      <path d="M8 12h.01" />
+      <path d="M12 12h.01" />
+      <path d="M16 12h.01" />
     </svg>
   );
 }
