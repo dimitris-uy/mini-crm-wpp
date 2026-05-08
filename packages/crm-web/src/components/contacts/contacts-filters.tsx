@@ -1,10 +1,13 @@
 'use client';
 
 import { useDebounce } from '@/hooks/useDebounce';
+import { useWebSocket } from '@/hooks/useWebSocket';
+import { apiFetch } from '@/lib/api';
 import { useEffect, useState } from 'react';
+import type { Label } from '@/lib/types';
 
 export interface ContactFilters {
-  status: 'all' | 'prospect' | 'client';
+  labelId: string | null;
   search: string;
   inactiveOnly: boolean;
 }
@@ -17,6 +20,18 @@ interface ContactsFiltersProps {
 export function ContactsFilters({ filters, onChange }: ContactsFiltersProps) {
   const [searchInput, setSearchInput] = useState(filters.search);
   const debouncedSearch = useDebounce(searchInput, 300);
+  const [labels, setLabels] = useState<Label[]>([]);
+  const { lastEvent } = useWebSocket();
+
+  useEffect(() => {
+    apiFetch<Label[]>('/labels').then(setLabels).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (lastEvent?.type === 'label:update') {
+      apiFetch<Label[]>('/labels').then(setLabels).catch(() => {});
+    }
+  }, [lastEvent]);
 
   useEffect(() => {
     if (debouncedSearch !== filters.search) {
@@ -26,20 +41,23 @@ export function ContactsFilters({ filters, onChange }: ContactsFiltersProps) {
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-      {/* Status dropdown */}
+      {/* Label dropdown */}
       <select
-        value={filters.status}
+        value={filters.labelId ?? 'all'}
         onChange={(e) =>
           onChange({
             ...filters,
-            status: e.target.value as ContactFilters['status'],
+            labelId: e.target.value === 'all' ? null : e.target.value,
           })
         }
         className="h-11 sm:h-9 w-full sm:w-auto rounded-lg border border-zinc-800 bg-zinc-900 px-3 text-sm text-zinc-300 outline-none transition-colors hover:border-zinc-700 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/40"
       >
-        <option value="all">Todos</option>
-        <option value="prospect">Prospectos</option>
-        <option value="client">Clientes</option>
+        <option value="all">Todas las etiquetas</option>
+        {labels.map((label) => (
+          <option key={label.id} value={label.id}>
+            {label.name}
+          </option>
+        ))}
       </select>
 
       {/* Search input */}

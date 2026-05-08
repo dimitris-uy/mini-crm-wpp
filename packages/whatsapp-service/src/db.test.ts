@@ -9,6 +9,12 @@ import {
   getMessages,
   getDashboardStats,
   bulkInsertMessages,
+  upsertLabel,
+  deleteLabel,
+  getLabels,
+  setContactLabel,
+  removeContactLabel,
+  getContactLabels,
 } from './db.js';
 import type Database from 'better-sqlite3';
 
@@ -34,19 +40,19 @@ describe('upsertContact + getContact', () => {
     expect(contact!.notes).toBe('');
     expect(contact!.created_at).toBeTypeOf('number');
     expect(contact!.updated_at).toBeTypeOf('number');
+    expect(contact!.labels).toEqual([]);
   });
 
   it('upsert preserves existing fields when not provided', () => {
     upsertContact(db, { jid: 'u1@s.whatsapp.net', name: 'Alice', phone: '+598111' });
     const original = getContact(db, 'u1@s.whatsapp.net')!;
 
-    // Update only status — name and phone should be preserved
-    upsertContact(db, { jid: 'u1@s.whatsapp.net', status: 'client' });
+    // Update only name — phone should be preserved
+    upsertContact(db, { jid: 'u1@s.whatsapp.net', name: 'Alice Updated' });
     const updated = getContact(db, 'u1@s.whatsapp.net')!;
 
-    expect(updated.name).toBe('Alice');
+    expect(updated.name).toBe('Alice Updated');
     expect(updated.phone).toBe('+598111');
-    expect(updated.status).toBe('client');
     expect(updated.created_at).toBe(original.created_at);
     expect(updated.updated_at).toBeGreaterThanOrEqual(original.updated_at);
   });
@@ -124,16 +130,6 @@ describe('insertMessage + getMessages', () => {
 });
 
 describe('updateContact', () => {
-  it('updates contact status from prospect to client', () => {
-    upsertContact(db, { jid: 'u2@s.whatsapp.net', name: 'Carlos' });
-    expect(getContact(db, 'u2@s.whatsapp.net')!.status).toBe('prospect');
-
-    updateContact(db, 'u2@s.whatsapp.net', { status: 'client' });
-    const updated = getContact(db, 'u2@s.whatsapp.net')!;
-    expect(updated.status).toBe('client');
-    expect(updated.name).toBe('Carlos'); // preserved
-  });
-
   it('updates notes and follow_up_date', () => {
     upsertContact(db, { jid: 'u3@s.whatsapp.net', name: 'Diana' });
     updateContact(db, 'u3@s.whatsapp.net', {
@@ -150,21 +146,9 @@ describe('updateContact', () => {
 describe('getContacts filters', () => {
   beforeEach(() => {
     upsertContact(db, { jid: 'a@s.whatsapp.net', name: 'Alice', phone: '+1111' });
-    upsertContact(db, { jid: 'b@s.whatsapp.net', name: 'Bob', phone: '+2222', status: 'client' });
+    upsertContact(db, { jid: 'b@s.whatsapp.net', name: 'Bob', phone: '+2222' });
     upsertContact(db, { jid: 'c@s.whatsapp.net', name: 'Charlie', phone: '+3333' });
-    upsertContact(db, { jid: 'j@s.whatsapp.net', name: 'John', phone: '+4444', status: 'client' });
-  });
-
-  it('filters by status=client', () => {
-    const clients = getContacts(db, { status: 'client' });
-    expect(clients).toHaveLength(2);
-    expect(clients.every((c) => c.status === 'client')).toBe(true);
-  });
-
-  it('filters by status=prospect', () => {
-    const prospects = getContacts(db, { status: 'prospect' });
-    expect(prospects).toHaveLength(2);
-    expect(prospects.every((c) => c.status === 'prospect')).toBe(true);
+    upsertContact(db, { jid: 'j@s.whatsapp.net', name: 'John', phone: '+4444' });
   });
 
   it('filters inactive contacts by inactive_days', () => {
@@ -213,11 +197,10 @@ describe('getDashboardStats', () => {
   it('returns correct counts after inserting test data', () => {
     const now = Date.now();
 
-    // 2 prospects, 2 clients
     upsertContact(db, { jid: 'p1@s.whatsapp.net', name: 'P1' });
     upsertContact(db, { jid: 'p2@s.whatsapp.net', name: 'P2' });
-    upsertContact(db, { jid: 'c1@s.whatsapp.net', name: 'C1', status: 'client' });
-    upsertContact(db, { jid: 'c2@s.whatsapp.net', name: 'C2', status: 'client' });
+    upsertContact(db, { jid: 'c1@s.whatsapp.net', name: 'C1' });
+    upsertContact(db, { jid: 'c2@s.whatsapp.net', name: 'C2' });
 
     // 1 with pending follow-up (today or past)
     updateContact(db, 'p1@s.whatsapp.net', { follow_up_date: '2020-01-01' });
@@ -244,10 +227,9 @@ describe('getDashboardStats', () => {
 
     const stats = getDashboardStats(db);
     expect(stats.total).toBe(4);
-    expect(stats.prospects).toBe(2);
-    expect(stats.clients).toBe(2);
     expect(stats.pendingFollowUps).toBe(1);
     expect(stats.inactive).toBe(3); // p1, p2 (null), c2 (old)
+    expect(stats.labels).toEqual([]);
   });
 });
 
@@ -297,5 +279,101 @@ describe('duplicate message handling', () => {
     const msgs = getMessages(db, 'dup@s.whatsapp.net');
     expect(msgs).toHaveLength(1);
     expect(msgs[0].content).toBe('First');
+  });
+});
+
+describe('labels', () => {
+  it('upsertLabel inserts and retrieves a label', () => {
+    upsertLabel(db, { id: 'label-1', name: 'Nuevo cliente', color: 0 });
+    const labels = getLabels(db);
+    expect(labels).toHaveLength(1);
+    expect(labels[0]).toEqual({ id: 'label-1', name: 'Nuevo cliente', color: 0, predefined_id: null });
+  });
+
+  it('upsertLabel updates an existing label', () => {
+    upsertLabel(db, { id: 'label-1', name: 'Nuevo cliente', color: 0 });
+    upsertLabel(db, { id: 'label-1', name: 'Cliente VIP', color: 3 });
+    const labels = getLabels(db);
+    expect(labels).toHaveLength(1);
+    expect(labels[0].name).toBe('Cliente VIP');
+    expect(labels[0].color).toBe(3);
+  });
+
+  it('deleteLabel soft-deletes and cleans junction table', () => {
+    upsertContact(db, { jid: 'c1@s.whatsapp.net', name: 'Alice' });
+    upsertLabel(db, { id: 'label-1', name: 'Test', color: 0 });
+    setContactLabel(db, 'c1@s.whatsapp.net', 'label-1');
+
+    deleteLabel(db, 'label-1');
+
+    expect(getLabels(db)).toHaveLength(0);
+    expect(getContactLabels(db, 'c1@s.whatsapp.net')).toHaveLength(0);
+  });
+
+  it('setContactLabel and removeContactLabel manage associations', () => {
+    upsertContact(db, { jid: 'c1@s.whatsapp.net', name: 'Alice' });
+    upsertLabel(db, { id: 'L1', name: 'Label1', color: 1 });
+    upsertLabel(db, { id: 'L2', name: 'Label2', color: 2 });
+
+    setContactLabel(db, 'c1@s.whatsapp.net', 'L1');
+    setContactLabel(db, 'c1@s.whatsapp.net', 'L2');
+
+    const labels = getContactLabels(db, 'c1@s.whatsapp.net');
+    expect(labels).toHaveLength(2);
+
+    removeContactLabel(db, 'c1@s.whatsapp.net', 'L1');
+    expect(getContactLabels(db, 'c1@s.whatsapp.net')).toHaveLength(1);
+    expect(getContactLabels(db, 'c1@s.whatsapp.net')[0].id).toBe('L2');
+  });
+
+  it('setContactLabel is idempotent (INSERT OR IGNORE)', () => {
+    upsertContact(db, { jid: 'c1@s.whatsapp.net', name: 'Alice' });
+    upsertLabel(db, { id: 'L1', name: 'Label1', color: 1 });
+
+    setContactLabel(db, 'c1@s.whatsapp.net', 'L1');
+    setContactLabel(db, 'c1@s.whatsapp.net', 'L1'); // duplicate
+
+    expect(getContactLabels(db, 'c1@s.whatsapp.net')).toHaveLength(1);
+  });
+
+  it('getContact returns labels', () => {
+    upsertContact(db, { jid: 'c1@s.whatsapp.net', name: 'Alice' });
+    upsertLabel(db, { id: 'L1', name: 'Label1', color: 1 });
+    setContactLabel(db, 'c1@s.whatsapp.net', 'L1');
+
+    const contact = getContact(db, 'c1@s.whatsapp.net');
+    expect(contact!.labels).toHaveLength(1);
+    expect(contact!.labels[0].name).toBe('Label1');
+  });
+
+  it('getContacts with label filter returns only matching contacts', () => {
+    upsertContact(db, { jid: 'a@s.whatsapp.net', name: 'Alice' });
+    upsertContact(db, { jid: 'b@s.whatsapp.net', name: 'Bob' });
+    upsertLabel(db, { id: 'L1', name: 'VIP', color: 0 });
+    setContactLabel(db, 'a@s.whatsapp.net', 'L1');
+
+    const filtered = getContacts(db, { label: 'L1' });
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].jid).toBe('a@s.whatsapp.net');
+
+    const all = getContacts(db);
+    expect(all).toHaveLength(2);
+  });
+
+  it('getDashboardStats includes label counts', () => {
+    upsertContact(db, { jid: 'a@s.whatsapp.net', name: 'Alice' });
+    upsertContact(db, { jid: 'b@s.whatsapp.net', name: 'Bob' });
+    upsertLabel(db, { id: 'L1', name: 'VIP', color: 0 });
+    upsertLabel(db, { id: 'L2', name: 'Nuevo', color: 1 });
+    setContactLabel(db, 'a@s.whatsapp.net', 'L1');
+    setContactLabel(db, 'b@s.whatsapp.net', 'L1');
+    setContactLabel(db, 'a@s.whatsapp.net', 'L2');
+
+    const stats = getDashboardStats(db);
+    expect(stats.labels).toHaveLength(2);
+    const vip = stats.labels.find(l => l.id === 'L1');
+    expect(vip!.count).toBe(2);
+    const nuevo = stats.labels.find(l => l.id === 'L2');
+    expect(nuevo!.count).toBe(1);
   });
 });

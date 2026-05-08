@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { apiFetch } from '@/lib/api';
 import { formatPhone } from '@/lib/utils';
+import { getLabelColor } from '@/lib/label-colors';
 import type { Contact } from '@/lib/types';
 
 interface ContactHeaderProps {
@@ -11,32 +10,7 @@ interface ContactHeaderProps {
   onContactUpdate: (updated: Partial<Contact>) => void;
 }
 
-export function ContactHeader({ contact, onContactUpdate }: ContactHeaderProps) {
-  const [toggling, setToggling] = useState(false);
-
-  async function toggleStatus() {
-    const newStatus = contact.status === 'prospect' ? 'client' : 'prospect';
-    setToggling(true);
-    onContactUpdate({ status: newStatus });
-
-    try {
-      await apiFetch(`/contacts/${encodeURIComponent(contact.jid)}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: newStatus }),
-      });
-    } catch {
-      // Revert on failure
-      onContactUpdate({ status: contact.status });
-    } finally {
-      setToggling(false);
-    }
-  }
-
-  const statusStyles =
-    contact.status === 'client'
-      ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 shadow-[0_0_8px_rgba(52,211,153,0.3)]'
-      : 'bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 shadow-[0_0_8px_rgba(34,211,238,0.3)]';
-
+export function ContactHeader({ contact }: ContactHeaderProps) {
   return (
     <div className="flex flex-wrap items-center gap-2 sm:gap-4 border-b border-zinc-800 bg-zinc-900 px-3 py-2.5 sm:px-6 sm:py-3">
       <Link
@@ -69,21 +43,26 @@ export function ContactHeader({ contact, onContactUpdate }: ContactHeaderProps) 
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={toggleStatus}
-        disabled={toggling}
-        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 min-h-[44px] sm:min-h-0 sm:py-1 text-xs font-medium transition-all duration-150 active:scale-[0.97] cursor-pointer ${statusStyles} ${
-          toggling ? 'opacity-60' : ''
-        }`}
-      >
-        <span
-          className={`h-1.5 w-1.5 rounded-full ${
-            contact.status === 'client' ? 'bg-emerald-400' : 'bg-cyan-400'
-          }`}
-        />
-        {contact.status === 'client' ? 'Cliente' : 'Prospecto'}
-      </button>
+      {/* Labels */}
+      <div className="flex flex-wrap gap-1.5">
+        {contact.labels && contact.labels.length > 0 ? (
+          contact.labels.map((label) => (
+            <span
+              key={label.id}
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-white/90"
+              style={{ backgroundColor: getLabelColor(label.color) + '30', color: getLabelColor(label.color) }}
+            >
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ backgroundColor: getLabelColor(label.color) }}
+              />
+              {label.name}
+            </span>
+          ))
+        ) : (
+          <span className="text-xs text-zinc-500">Sin etiquetas</span>
+        )}
+      </div>
     </div>
   );
 }

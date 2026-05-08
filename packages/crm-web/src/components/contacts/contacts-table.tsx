@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
-import type { Contact } from '@/lib/types';
+import { getLabelColor } from '@/lib/label-colors';
+import type { Contact, Label } from '@/lib/types';
 import { timeAgo, formatDate, formatPhone } from '@/lib/utils';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { ContactsFilters, type ContactFilters } from './contacts-filters';
@@ -20,7 +21,7 @@ export function ContactsTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<ContactFilters>({
-    status: 'all',
+    labelId: null,
     search: '',
     inactiveOnly: false,
   });
@@ -29,7 +30,7 @@ export function ContactsTable() {
 
   const fetchContacts = useCallback(() => {
     const params = new URLSearchParams();
-    if (filters.status !== 'all') params.set('status', filters.status);
+    if (filters.labelId) params.set('label', filters.labelId);
     if (filters.search) params.set('search', filters.search);
     if (filters.inactiveOnly) params.set('inactive', '1');
 
@@ -54,7 +55,9 @@ export function ContactsTable() {
 
     if (
       lastEvent.type === 'contact:update' ||
-      lastEvent.type === 'message:new'
+      lastEvent.type === 'message:new' ||
+      lastEvent.type === 'label:update' ||
+      lastEvent.type === 'contact:labels'
     ) {
       fetchContacts();
     }
@@ -79,7 +82,7 @@ export function ContactsTable() {
             Nombre
           </span>
           <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-            Estado
+            Etiquetas
           </span>
           <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">
             Ultimo mensaje
@@ -171,9 +174,9 @@ export function ContactsTable() {
                     </p>
                   </div>
 
-                  {/* Status badge */}
+                  {/* Label badges */}
                   <div className="mt-2 sm:mt-0">
-                    <StatusBadge status={contact.status} />
+                    <LabelBadges labels={contact.labels} />
                   </div>
 
                   {/* Last message */}
@@ -218,18 +221,38 @@ export function ContactsTable() {
   );
 }
 
-function StatusBadge({ status }: { status: Contact['status'] }) {
-  const isClient = status === 'client';
+function LabelBadges({ labels }: { labels: Label[] }) {
+  if (!labels || labels.length === 0) {
+    return <span className="text-xs text-zinc-600">—</span>;
+  }
+
+  const visible = labels.slice(0, 2);
+  const remaining = labels.length - visible.length;
+
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-        isClient
-          ? 'bg-emerald-500/15 text-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)]'
-          : 'bg-cyan-500/15 text-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.3)]'
-      }`}
-    >
-      {isClient ? 'Cliente' : 'Prospecto'}
-    </span>
+    <div className="flex flex-wrap gap-1">
+      {visible.map((label) => (
+        <span
+          key={label.id}
+          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+          style={{
+            backgroundColor: getLabelColor(label.color) + '25',
+            color: getLabelColor(label.color),
+          }}
+        >
+          <span
+            className="h-1.5 w-1.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: getLabelColor(label.color) }}
+          />
+          {label.name}
+        </span>
+      ))}
+      {remaining > 0 && (
+        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs text-zinc-500 bg-zinc-800">
+          +{remaining}
+        </span>
+      )}
+    </div>
   );
 }
 

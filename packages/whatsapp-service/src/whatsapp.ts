@@ -27,6 +27,7 @@ import makeWASocket, {
   type WAMessage,
   type proto,
 } from '@whiskeysockets/baileys';
+import { LabelAssociationType } from '@whiskeysockets/baileys/lib/Types/LabelAssociation.js';
 import pino from 'pino';
 
 // ---------------------------------------------------------------------------
@@ -69,6 +70,8 @@ export interface WhatsAppManagerEvents {
   message: [msg: IncomingMessage];
   history: [data: { messages: RawHistoryMessage[]; contacts: RawHistoryContact[] }];
   'history:done': [];
+  'label:edit': [label: { id: string; name: string; color: number; predefinedId?: string; deleted: boolean }];
+  'label:association': [data: { chatId: string; labelId: string; type: 'add' | 'remove' }];
 }
 
 // ---------------------------------------------------------------------------
@@ -417,6 +420,28 @@ export class WhatsAppManager extends EventEmitter<WhatsAppManagerEvents> {
       const pnJid = `${mapping.pn.split('@')[0].split(':')[0]}@s.whatsapp.net`;
       this.lidToPhoneMap[lidUser] = pnJid;
       logger.debug({ lid: mapping.lid, pn: pnJid }, 'LID mapping updated');
+    });
+
+    // ----- labels.edit -----
+    sock.ev.on('labels.edit', (label) => {
+      this.emit('label:edit', {
+        id: label.id,
+        name: label.name,
+        color: label.color,
+        predefinedId: label.predefinedId,
+        deleted: label.deleted,
+      });
+    });
+
+    // ----- labels.association -----
+    sock.ev.on('labels.association', ({ association, type }) => {
+      if (association.type === LabelAssociationType.Chat) {
+        this.emit('label:association', {
+          chatId: association.chatId,
+          labelId: association.labelId,
+          type,
+        });
+      }
     });
   }
 

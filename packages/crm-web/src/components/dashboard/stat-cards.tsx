@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { getLabelColor } from '@/lib/label-colors';
 import type { DashboardStats } from '@/lib/types';
 
 interface StatCard {
   label: string;
-  key: keyof DashboardStats;
+  key: 'total' | 'pendingFollowUps' | 'inactive';
   icon: React.ReactNode;
   color: string;
   bg: string;
@@ -37,53 +38,6 @@ const cards: StatCard[] = [
         <circle cx="9" cy="7" r="4" />
         <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Prospectos',
-    key: 'prospects',
-    color: 'text-cyan-400',
-    bg: 'bg-cyan-500/10',
-    borderColor: 'hover:border-cyan-800',
-    shadowColor: 'hover:shadow-[0_0_12px_rgba(34,211,238,0.15)]',
-    icon: (
-      <svg
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <circle cx="12" cy="12" r="6" />
-        <circle cx="12" cy="12" r="2" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Clientes',
-    key: 'clients',
-    color: 'text-emerald-400',
-    bg: 'bg-emerald-500/10',
-    borderColor: 'hover:border-emerald-800',
-    shadowColor: 'hover:shadow-[0_0_12px_rgba(52,211,153,0.15)]',
-    icon: (
-      <svg
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-        <polyline points="22 4 12 14.01 9 11.01" />
       </svg>
     ),
   },
@@ -156,30 +110,59 @@ export function StatCards() {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-5">
-      {cards.map((card) => (
-        <div
-          key={card.key}
-          className={`rounded-xl border border-zinc-800 bg-zinc-900 p-3 sm:p-5 transition-all duration-150 ${card.borderColor} ${card.shadowColor}`}
-        >
-          <div className={`mb-2 sm:mb-3 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg ${card.bg} ${card.color}`}>
-            {card.icon}
-          </div>
-          {stats === null ? (
-            <div className="space-y-2">
-              <div className="h-8 w-16 animate-pulse rounded bg-zinc-800" />
-              <div className="h-4 w-24 animate-pulse rounded bg-zinc-800" />
+    <div className="space-y-4">
+      {/* Main stats */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
+        {cards.map((card) => (
+          <div
+            key={card.key}
+            className={`rounded-xl border border-zinc-800 bg-zinc-900 p-3 sm:p-5 transition-all duration-150 ${card.borderColor} ${card.shadowColor}`}
+          >
+            <div className={`mb-2 sm:mb-3 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg ${card.bg} ${card.color}`}>
+              {card.icon}
             </div>
-          ) : (
-            <>
-              <p className={`text-2xl sm:text-3xl font-bold tracking-tight tabular-nums ${card.color}`}>
-                {stats[card.key]}
-              </p>
-              <p className="mt-1 text-xs sm:text-sm text-zinc-500">{card.label}</p>
-            </>
-          )}
+            {stats === null ? (
+              <div className="space-y-2">
+                <div className="h-8 w-16 animate-pulse rounded bg-zinc-800" />
+                <div className="h-4 w-24 animate-pulse rounded bg-zinc-800" />
+              </div>
+            ) : (
+              <>
+                <p className={`text-2xl sm:text-3xl font-bold tracking-tight tabular-nums ${card.color}`}>
+                  {stats[card.key]}
+                </p>
+                <p className="mt-1 text-xs sm:text-sm text-zinc-500">{card.label}</p>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Label breakdown */}
+      {stats && stats.labels.length > 0 && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5">
+          <h3 className="mb-3 text-sm font-medium text-zinc-400">Etiquetas de WhatsApp</h3>
+          <div className="flex flex-wrap gap-2">
+            {stats.labels.map((label) => (
+              <span
+                key={label.id}
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium"
+                style={{
+                  backgroundColor: getLabelColor(label.color) + '20',
+                  color: getLabelColor(label.color),
+                }}
+              >
+                <span
+                  className="h-2 w-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: getLabelColor(label.color) }}
+                />
+                {label.name}
+                <span className="ml-1 text-xs opacity-70">{label.count}</span>
+              </span>
+            ))}
+          </div>
         </div>
-      ))}
+      )}
     </div>
   );
 }

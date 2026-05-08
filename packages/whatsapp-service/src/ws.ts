@@ -42,6 +42,14 @@ export function createWSServer(
     broadcast('history:sync:done', {});
   });
 
+  processor.on('label:update', (data) => {
+    broadcast('label:update', data);
+  });
+
+  processor.on('contact:labels', (data) => {
+    broadcast('contact:labels', data);
+  });
+
   // WhatsApp events
   wa.on('qr', (qr) => {
     broadcast('qr', { data: qr });

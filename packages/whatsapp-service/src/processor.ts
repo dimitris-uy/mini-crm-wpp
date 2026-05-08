@@ -8,12 +8,18 @@
 import { EventEmitter } from 'events';
 import type Database from 'better-sqlite3';
 import type { WhatsAppManager, IncomingMessage, RawHistoryMessage, RawHistoryContact } from './whatsapp.js';
-import type { Contact, Message } from './types.js';
+import type { Contact, Label, Message } from './types.js';
 import {
   upsertContact,
   getContact,
   insertMessage,
   bulkInsertMessages,
+  upsertLabel,
+  deleteLabel,
+  getLabels,
+  setContactLabel,
+  removeContactLabel,
+  getContactLabels,
 } from './db.js';
 
 // ---------------------------------------------------------------------------
@@ -25,6 +31,8 @@ export interface ProcessorEvents {
   'contact:update': [data: { contact: Contact }];
   'history:sync:progress': [data: { processed: number }];
   'history:sync:done': [];
+  'label:update': [data: { labels: Label[] }];
+  'contact:labels': [data: { jid: string; labels: Label[] }];
 }
 
 // ---------------------------------------------------------------------------
@@ -61,6 +69,8 @@ export class MessageProcessor extends EventEmitter<ProcessorEvents> {
     this.wa.on('message', (msg) => this.handleMessage(msg));
     this.wa.on('history', (data) => this.handleHistory(data));
     this.wa.on('history:done', () => this.handleHistoryDone());
+    this.wa.on('label:edit', (label) => this.handleLabelEdit(label));
+    this.wa.on('label:association', (data) => this.handleLabelAssociation(data));
   }
 
   // -----------------------------------------------------------------------
@@ -182,5 +192,34 @@ export class MessageProcessor extends EventEmitter<ProcessorEvents> {
   private handleHistoryDone(): void {
     this.historySyncDone = true;
     this.emit('history:sync:done');
+  }
+
+  // -----------------------------------------------------------------------
+  // Label handlers
+  // -----------------------------------------------------------------------
+
+  private handleLabelEdit(label: { id: string; name: string; color: number; predefinedId?: string; deleted: boolean }): void {
+    if (label.deleted) {
+      deleteLabel(this.db, label.id);
+    } else {
+      upsertLabel(this.db, {
+        id: label.id,
+        name: label.name,
+        color: label.color,
+        predefined_id: label.predefinedId,
+      });
+    }
+    const labels = getLabels(this.db);
+    this.emit('label:update', { labels });
+  }
+
+  private handleLabelAssociation(data: { chatId: string; labelId: string; type: 'add' | 'remove' }): void {
+    if (data.type === 'add') {
+      setContactLabel(this.db, data.chatId, data.labelId);
+    } else {
+      removeContactLabel(this.db, data.chatId, data.labelId);
+    }
+    const labels = getContactLabels(this.db, data.chatId);
+    this.emit('contact:labels', { jid: data.chatId, labels });
   }
 }

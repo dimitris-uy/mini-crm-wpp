@@ -6,11 +6,15 @@ import {
   getMessages,
   upsertContact,
   updateContact,
+  upsertLabel,
+  setContactLabel,
+  getLabels,
+  getContactLabels,
 } from './db.js';
 import { MessageProcessor, phoneFromJid } from './processor.js';
 import type { WhatsAppManager, WhatsAppManagerEvents } from './whatsapp.js';
 import type Database from 'better-sqlite3';
-import type { Contact, Message } from './types.js';
+import type { Contact, Label, Message } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Mock WhatsAppManager — just an EventEmitter with the right type signature
@@ -103,15 +107,14 @@ describe('real-time message handling', () => {
     expect(afterOutbound.last_reply_at).toBe(2000); // unchanged
   });
 
-  it('does not overwrite existing contact status on new messages', () => {
+  it('does not overwrite existing contact data on new messages', () => {
     const mockWA = wa as unknown as EventEmitter<WhatsAppManagerEvents>;
 
-    // Pre-create contact as client
+    // Pre-create contact
     upsertContact(db, {
       jid: '5491100003333@s.whatsapp.net',
       name: 'Existing Client',
       phone: '+5491100003333',
-      status: 'client',
     });
     updateContact(db, '5491100003333@s.whatsapp.net', {
       notes: 'VIP customer',
@@ -131,7 +134,6 @@ describe('real-time message handling', () => {
     });
 
     const contact = getContact(db, '5491100003333@s.whatsapp.net')!;
-    expect(contact.status).toBe('client');           // preserved
     expect(contact.name).toBe('Existing Client');    // not overwritten (already has name)
     expect(contact.notes).toBe('VIP customer');      // preserved
     expect(contact.follow_up_date).toBe('2026-07-01'); // preserved
@@ -270,15 +272,14 @@ describe('history sync', () => {
     expect(progressCount).toBe(3);
   });
 
-  it('does not overwrite existing contact status during history sync', () => {
+  it('does not overwrite existing contact data during history sync', () => {
     const mockWA = wa as unknown as EventEmitter<WhatsAppManagerEvents>;
 
-    // Pre-create a client contact
+    // Pre-create contact
     upsertContact(db, {
       jid: '5491100099999@s.whatsapp.net',
       name: 'Premium User',
       phone: '+5491100099999',
-      status: 'client',
     });
     updateContact(db, '5491100099999@s.whatsapp.net', { notes: 'Do not change' });
 
@@ -300,7 +301,6 @@ describe('history sync', () => {
     });
 
     const contact = getContact(db, '5491100099999@s.whatsapp.net')!;
-    expect(contact.status).toBe('client');              // preserved
     expect(contact.name).toBe('Premium User');          // kept existing name (upsert merges)
     expect(contact.notes).toBe('Do not change');        // preserved
   });
@@ -315,5 +315,93 @@ describe('history sync', () => {
 
     mockWA.emit('history:done');
     expect(doneFired).toBe(true);
+  });
+});
+
+describe('label handling', () => {
+  it('handles label:edit event — creates a new label', () => {
+    const mockWA = wa as unknown as EventEmitter<WhatsAppManagerEvents>;
+    let emittedLabels: Label[] | null = null;
+
+    processor.on('label:update', (data) => {
+      emittedLabels = data.labels;
+    });
+
+    mockWA.emit('label:edit', {
+      id: 'L1',
+      name: 'Nuevo cliente',
+      color: 0,
+      deleted: false,
+    });
+
+    const labels = getLabels(db);
+    expect(labels).toHaveLength(1);
+    expect(labels[0].name).toBe('Nuevo cliente');
+    expect(emittedLabels).not.toBeNull();
+    expect(emittedLabels!).toHaveLength(1);
+  });
+
+  it('handles label:edit with deleted=true — soft-deletes label', () => {
+    const mockWA = wa as unknown as EventEmitter<WhatsAppManagerEvents>;
+
+    // First create a label
+    mockWA.emit('label:edit', {
+      id: 'L1',
+      name: 'Test',
+      color: 0,
+      deleted: false,
+    });
+    expect(getLabels(db)).toHaveLength(1);
+
+    // Then delete it
+    mockWA.emit('label:edit', {
+      id: 'L1',
+      name: 'Test',
+      color: 0,
+      deleted: true,
+    });
+    expect(getLabels(db)).toHaveLength(0);
+  });
+
+  it('handles label:association add — links contact to label', () => {
+    const mockWA = wa as unknown as EventEmitter<WhatsAppManagerEvents>;
+
+    upsertContact(db, { jid: '5491100001111@s.whatsapp.net', name: 'Alice' });
+    upsertLabel(db, { id: 'L1', name: 'VIP', color: 1 });
+
+    let emittedData: { jid: string; labels: Label[] } | null = null;
+    processor.on('contact:labels', (data) => {
+      emittedData = data;
+    });
+
+    mockWA.emit('label:association', {
+      chatId: '5491100001111@s.whatsapp.net',
+      labelId: 'L1',
+      type: 'add',
+    });
+
+    const labels = getContactLabels(db, '5491100001111@s.whatsapp.net');
+    expect(labels).toHaveLength(1);
+    expect(labels[0].name).toBe('VIP');
+    expect(emittedData).not.toBeNull();
+    expect(emittedData!.jid).toBe('5491100001111@s.whatsapp.net');
+    expect(emittedData!.labels).toHaveLength(1);
+  });
+
+  it('handles label:association remove — unlinks contact from label', () => {
+    const mockWA = wa as unknown as EventEmitter<WhatsAppManagerEvents>;
+
+    upsertContact(db, { jid: '5491100001111@s.whatsapp.net', name: 'Alice' });
+    upsertLabel(db, { id: 'L1', name: 'VIP', color: 1 });
+    setContactLabel(db, '5491100001111@s.whatsapp.net', 'L1');
+
+    mockWA.emit('label:association', {
+      chatId: '5491100001111@s.whatsapp.net',
+      labelId: 'L1',
+      type: 'remove',
+    });
+
+    const labels = getContactLabels(db, '5491100001111@s.whatsapp.net');
+    expect(labels).toHaveLength(0);
   });
 });

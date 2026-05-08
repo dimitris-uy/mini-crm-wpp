@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { ContactHeader } from '@/components/contact/contact-header';
 import { ContactSidebar } from '@/components/contact/contact-sidebar';
 import { ChatMessages } from '@/components/contact/chat-messages';
 import { MessageComposer } from '@/components/contact/message-composer';
-import type { Contact, Message } from '@/lib/types';
+import type { Contact, Message, Label } from '@/lib/types';
 
 interface ContactDetailShellProps {
   jid: string;
@@ -17,12 +18,23 @@ export function ContactDetailShell({ jid }: ContactDetailShellProps) {
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [optimisticMessage, setOptimisticMessage] = useState<Message | null>(null);
+  const { lastEvent } = useWebSocket();
 
   useEffect(() => {
     apiFetch<Contact>(`/contacts/${encodeURIComponent(jid)}`)
       .then(setContact)
       .catch((err) => setError(err.message));
   }, [jid]);
+
+  useEffect(() => {
+    if (!lastEvent || !contact) return;
+    if (lastEvent.type === 'contact:labels') {
+      const data = lastEvent.data as { jid: string; labels: Label[] };
+      if (data.jid === jid) {
+        setContact((prev) => prev ? { ...prev, labels: data.labels } : prev);
+      }
+    }
+  }, [lastEvent, jid, contact]);
 
   function handleContactUpdate(updated: Partial<Contact>) {
     setContact((prev) => (prev ? { ...prev, ...updated } : prev));

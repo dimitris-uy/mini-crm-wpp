@@ -63,11 +63,12 @@ All routes are mounted under `/api`.
 | PATCH  | /api/contacts/:jid         | Update contact fields              |
 | GET    | /api/contacts/:jid/messages| Messages for a contact (paginated) |
 | POST   | /api/messages/send         | Send a WhatsApp message            |
+| GET    | /api/labels                | List all WhatsApp Business labels  |
 | GET    | /api/dashboard             | Aggregate stats for dashboard      |
 
 ### Query parameters
 
-- `GET /api/contacts` — `?status=prospect|client`, `?sort=name|last_message|last_reply`, `?inactive_days=N`, `?search=term`
+- `GET /api/contacts` — `?label=<label_id>`, `?sort=name|last_message|last_reply`, `?inactive_days=N`, `?search=term`
 - `GET /api/contacts/:jid/messages` — `?before=timestamp`, `?limit=N` (max 200, default 50)
 
 ## WebSocket Events
@@ -81,6 +82,8 @@ The WebSocket server on port 3002 broadcasts JSON messages with `{ type, data }`
 | `history:sync:progress`| `{ processed: number }`              | Processor |
 | `history:sync:done`    | `{}`                                 | Processor |
 | `qr`                   | `{ data: string }`                   | WhatsApp  |
+| `label:update`         | `{ labels: Label[] }`                | Processor |
+| `contact:labels`       | `{ jid, labels: Label[] }`           | Processor |
 | `connection:update`    | `{ connected: boolean, phone: ... }` | WhatsApp  |
 
 ## Database
@@ -94,7 +97,7 @@ SQLite at `<DATA_DIR>/crm.db` (default `./data/crm.db`). WAL mode enabled.
 | jid             | TEXT PK | WhatsApp JID                     |
 | name            | TEXT    | nullable                         |
 | phone           | TEXT    | nullable                         |
-| status          | TEXT    | `prospect` (default) or `client` |
+| status          | TEXT    | deprecated (default `prospect`, kept for DB compat; labels are the source of truth) |
 | last_message_at | INTEGER | epoch ms, nullable               |
 | last_reply_at   | INTEGER | epoch ms, nullable               |
 | follow_up_date  | TEXT    | ISO date string, nullable        |
@@ -113,7 +116,25 @@ SQLite at `<DATA_DIR>/crm.db` (default `./data/crm.db`). WAL mode enabled.
 | type        | TEXT    | `text`, `image`, `audio`, `video`, `document`|
 | timestamp   | INTEGER | epoch ms                                     |
 
-Indexes: `idx_messages_contact(contact_jid, timestamp)`, `idx_contacts_status(status)`, `idx_contacts_follow_up(follow_up_date)`.
+### labels
+
+| Column       | Type    | Notes                       |
+|--------------|---------|-----------------------------|
+| id           | TEXT PK | WhatsApp label ID           |
+| name         | TEXT    | Label display name          |
+| color        | INTEGER | Color index (0-19)          |
+| predefined_id| TEXT    | nullable, for predefined WA labels |
+| deleted      | INTEGER | 0=active, 1=soft-deleted    |
+
+### contact_labels
+
+| Column      | Type    | Notes                        |
+|-------------|---------|------------------------------|
+| contact_jid | TEXT FK | references contacts(jid)     |
+| label_id    | TEXT FK | references labels(id)        |
+| (composite PK) |      | (contact_jid, label_id)      |
+
+Indexes: `idx_messages_contact(contact_jid, timestamp)`, `idx_contacts_status(status)`, `idx_contacts_follow_up(follow_up_date)`, `idx_contact_labels_label(label_id)`.
 
 ## Key Files
 

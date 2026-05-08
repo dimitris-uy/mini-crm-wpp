@@ -17,6 +17,7 @@ import {
   getDashboardStats,
   upsertContact,
   insertMessage,
+  getLabels,
 } from './db.js';
 import type { Message } from './types.js';
 
@@ -25,7 +26,6 @@ import type { Message } from './types.js';
 // ---------------------------------------------------------------------------
 
 const updateContactSchema = z.object({
-  status: z.enum(['prospect', 'client']).optional(),
   name: z.string().optional(),
   notes: z.string().optional(),
   follow_up_date: z.string().nullable().optional(),
@@ -91,9 +91,15 @@ export function createRouter(db: Database.Database, wa: WhatsAppManager): Router
     }),
   );
 
+  // ----- GET /labels -----
+  router.get('/labels', (_req, res) => {
+    const labels = getLabels(db);
+    res.json(labels);
+  });
+
   // ----- GET /contacts -----
   router.get('/contacts', (req, res) => {
-    const status = req.query.status as string | undefined;
+    const label = req.query.label as string | undefined;
     const sort = req.query.sort as string | undefined;
     const inactive_days = req.query.inactive_days
       ? parseInt(req.query.inactive_days as string, 10)
@@ -101,7 +107,7 @@ export function createRouter(db: Database.Database, wa: WhatsAppManager): Router
     const search = req.query.search as string | undefined;
 
     const contacts = getContacts(db, {
-      status: status === 'prospect' || status === 'client' ? status : undefined,
+      label: label || undefined,
       sort: sort === 'name' || sort === 'last_message' || sort === 'last_reply' ? sort : undefined,
       inactive_days: inactive_days !== undefined && !isNaN(inactive_days) ? inactive_days : undefined,
       search,

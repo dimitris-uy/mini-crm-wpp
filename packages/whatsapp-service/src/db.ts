@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import type { Contact, DashboardStats, Message } from './types.js';
+import type { Contact, DashboardStats, Label, Message } from './types.js';
 
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS contacts (
@@ -28,6 +28,24 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_messages_contact ON messages(contact_jid, timestamp);
   CREATE INDEX IF NOT EXISTS idx_contacts_status ON contacts(status);
   CREATE INDEX IF NOT EXISTS idx_contacts_follow_up ON contacts(follow_up_date);
+
+  CREATE TABLE IF NOT EXISTS labels (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    color INTEGER NOT NULL,
+    predefined_id TEXT,
+    deleted INTEGER NOT NULL DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS contact_labels (
+    contact_jid TEXT NOT NULL,
+    label_id TEXT NOT NULL,
+    PRIMARY KEY (contact_jid, label_id),
+    FOREIGN KEY (contact_jid) REFERENCES contacts(jid),
+    FOREIGN KEY (label_id) REFERENCES labels(id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_contact_labels_label ON contact_labels(label_id);
 `;
 
 export function initDatabase(dbPath: string): Database.Database {
@@ -37,21 +55,87 @@ export function initDatabase(dbPath: string): Database.Database {
   return db;
 }
 
+// ---------------------------------------------------------------------------
+// Label CRUD
+// ---------------------------------------------------------------------------
+
+export function upsertLabel(
+  db: Database.Database,
+  data: { id: string; name: string; color: number; predefined_id?: string },
+): void {
+  db.prepare(
+    `INSERT OR REPLACE INTO labels (id, name, color, predefined_id, deleted)
+     VALUES (?, ?, ?, ?, 0)`,
+  ).run(data.id, data.name, data.color, data.predefined_id ?? null);
+}
+
+export function deleteLabel(db: Database.Database, id: string): void {
+  const transaction = db.transaction(() => {
+    db.prepare('UPDATE labels SET deleted = 1 WHERE id = ?').run(id);
+    db.prepare('DELETE FROM contact_labels WHERE label_id = ?').run(id);
+  });
+  transaction();
+}
+
+export function getLabels(db: Database.Database): Label[] {
+  return db
+    .prepare('SELECT id, name, color, predefined_id FROM labels WHERE deleted = 0')
+    .all() as Label[];
+}
+
+export function setContactLabel(
+  db: Database.Database,
+  contactJid: string,
+  labelId: string,
+): void {
+  db.prepare(
+    'INSERT OR IGNORE INTO contact_labels (contact_jid, label_id) VALUES (?, ?)',
+  ).run(contactJid, labelId);
+}
+
+export function removeContactLabel(
+  db: Database.Database,
+  contactJid: string,
+  labelId: string,
+): void {
+  db.prepare(
+    'DELETE FROM contact_labels WHERE contact_jid = ? AND label_id = ?',
+  ).run(contactJid, labelId);
+}
+
+export function getContactLabels(
+  db: Database.Database,
+  contactJid: string,
+): Label[] {
+  return db
+    .prepare(
+      `SELECT l.id, l.name, l.color, l.predefined_id
+       FROM labels l
+       JOIN contact_labels cl ON l.id = cl.label_id
+       WHERE cl.contact_jid = ? AND l.deleted = 0`,
+    )
+    .all(contactJid) as Label[];
+}
+
+// ---------------------------------------------------------------------------
+// Contact CRUD
+// ---------------------------------------------------------------------------
+
 export function upsertContact(
   db: Database.Database,
-  data: { jid: string; name?: string; phone?: string; status?: 'prospect' | 'client' },
+  data: { jid: string; name?: string; phone?: string },
 ): void {
   const now = Date.now();
   const existing = db
     .prepare('SELECT * FROM contacts WHERE jid = ?')
-    .get(data.jid) as Contact | undefined;
+    .get(data.jid) as (Omit<Contact, 'labels'>) | undefined;
 
   if (existing) {
     const merged = {
       jid: data.jid,
       name: data.name ?? existing.name,
       phone: data.phone ?? existing.phone,
-      status: data.status ?? existing.status,
+      status: existing.status,
       last_message_at: existing.last_message_at,
       last_reply_at: existing.last_reply_at,
       follow_up_date: existing.follow_up_date,
@@ -82,7 +166,7 @@ export function upsertContact(
       data.jid,
       data.name ?? null,
       data.phone ?? null,
-      data.status ?? 'prospect',
+      'prospect',
       null,
       null,
       null,
@@ -99,12 +183,14 @@ export function getContact(
 ): Contact | null {
   const row = db
     .prepare('SELECT * FROM contacts WHERE jid = ?')
-    .get(jid) as Contact | undefined;
-  return row ?? null;
+    .get(jid) as (Omit<Contact, 'labels'>) | undefined;
+  if (!row) return null;
+  const labels = getContactLabels(db, jid);
+  return { ...row, labels };
 }
 
 export interface GetContactsFilters {
-  status?: 'prospect' | 'client';
+  label?: string;
   sort?: 'name' | 'last_message' | 'last_reply';
   inactive_days?: number;
   search?: string;
@@ -117,9 +203,9 @@ export function getContacts(
   const conditions: string[] = [];
   const params: unknown[] = [];
 
-  if (filters.status) {
-    conditions.push('status = ?');
-    params.push(filters.status);
+  if (filters.label) {
+    conditions.push('EXISTS (SELECT 1 FROM contact_labels WHERE contact_labels.contact_jid = contacts.jid AND contact_labels.label_id = ?)');
+    params.push(filters.label);
   }
 
   if (filters.inactive_days !== undefined) {
@@ -150,23 +236,41 @@ export function getContacts(
       break;
   }
 
-  return db
+  const contacts = db
     .prepare(`SELECT * FROM contacts ${where} ${orderBy}`)
-    .all(...params) as Contact[];
+    .all(...params) as Array<Omit<Contact, 'labels'>>;
+
+  // Batch-fetch labels for all returned contacts
+  const jids = contacts.map(c => c.jid);
+  if (jids.length > 0) {
+    const placeholders = jids.map(() => '?').join(',');
+    const labelRows = db.prepare(
+      `SELECT cl.contact_jid, l.id, l.name, l.color, l.predefined_id
+       FROM contact_labels cl
+       JOIN labels l ON l.id = cl.label_id
+       WHERE cl.contact_jid IN (${placeholders}) AND l.deleted = 0`
+    ).all(...jids) as Array<{ contact_jid: string; id: string; name: string; color: number; predefined_id: string | null }>;
+
+    const labelMap = new Map<string, Label[]>();
+    for (const row of labelRows) {
+      const arr = labelMap.get(row.contact_jid) ?? [];
+      arr.push({ id: row.id, name: row.name, color: row.color, predefined_id: row.predefined_id });
+      labelMap.set(row.contact_jid, arr);
+    }
+
+    return contacts.map(c => ({ ...c, labels: labelMap.get(c.jid) ?? [] }));
+  }
+  return contacts.map(c => ({ ...c, labels: [] }));
 }
 
 export function updateContact(
   db: Database.Database,
   jid: string,
-  fields: Partial<{ status: 'prospect' | 'client'; name: string; notes: string; follow_up_date: string | null }>,
+  fields: Partial<{ name: string; notes: string; follow_up_date: string | null }>,
 ): void {
   const sets: string[] = [];
   const params: unknown[] = [];
 
-  if (fields.status !== undefined) {
-    sets.push('status = ?');
-    params.push(fields.status);
-  }
   if (fields.name !== undefined) {
     sets.push('name = ?');
     params.push(fields.name);
@@ -253,19 +357,24 @@ export function getDashboardStats(db: Database.Database): DashboardStats {
   const today = new Date().toISOString().slice(0, 10);
   const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
-  const row = db
-    .prepare(
-      `SELECT
-        COUNT(*) as total,
-        SUM(CASE WHEN status = 'prospect' THEN 1 ELSE 0 END) as prospects,
-        SUM(CASE WHEN status = 'client' THEN 1 ELSE 0 END) as clients,
-        SUM(CASE WHEN follow_up_date IS NOT NULL AND follow_up_date <= ? THEN 1 ELSE 0 END) as pendingFollowUps,
-        SUM(CASE WHEN last_reply_at IS NULL OR last_reply_at < ? THEN 1 ELSE 0 END) as inactive
-      FROM contacts`,
-    )
-    .get(today, sevenDaysAgo) as DashboardStats;
+  const row = db.prepare(
+    `SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN follow_up_date IS NOT NULL AND follow_up_date <= ? THEN 1 ELSE 0 END) as pendingFollowUps,
+      SUM(CASE WHEN last_reply_at IS NULL OR last_reply_at < ? THEN 1 ELSE 0 END) as inactive
+    FROM contacts`
+  ).get(today, sevenDaysAgo) as { total: number; pendingFollowUps: number; inactive: number };
 
-  return row;
+  const labelCounts = db.prepare(
+    `SELECT l.id, l.name, l.color, COUNT(cl.contact_jid) as count
+     FROM labels l
+     LEFT JOIN contact_labels cl ON cl.label_id = l.id
+     WHERE l.deleted = 0
+     GROUP BY l.id
+     ORDER BY l.name`
+  ).all() as Array<{ id: string; name: string; color: number; count: number }>;
+
+  return { ...row, labels: labelCounts };
 }
 
 export function bulkInsertMessages(

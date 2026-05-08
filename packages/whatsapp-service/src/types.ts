@@ -1,8 +1,16 @@
+export interface Label {
+  id: string;
+  name: string;
+  color: number;
+  predefined_id: string | null;
+}
+
 export interface Contact {
   jid: string;
   name: string | null;
   phone: string | null;
-  status: 'prospect' | 'client';
+  status: string; // deprecated, kept for DB compat
+  labels: Label[];
   last_message_at: number | null;
   last_reply_at: number | null;
   follow_up_date: string | null;
@@ -22,8 +30,7 @@ export interface Message {
 
 export interface DashboardStats {
   total: number;
-  prospects: number;
-  clients: number;
   pendingFollowUps: number;
   inactive: number;
+  labels: Array<{ id: string; name: string; color: number; count: number }>;
 }
